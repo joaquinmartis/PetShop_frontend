@@ -7,10 +7,20 @@ import { Product } from "../types/types";
 import useCartStore from "../store/cartStore";
 
 
-
+import { useNavigate } from 'react-router-dom';
 
 function ProductCard({ product }: { product: Product }) {
   const addToCart = useCartStore((state) => state.addToCart);
+  const navigate = useNavigate();
+
+  const handleAddToCart = () => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      navigate("/auth"); // redirige a la página de login/registro
+      return;
+    }
+    addToCart(product);
+  };
 
   return (
     <div className="product h-[300px] bg-white drop-shadow-2xl p-2 rounded">
@@ -26,7 +36,7 @@ function ProductCard({ product }: { product: Product }) {
           <p className="text-xl font-bold">${product.price}.00</p>
           <button
             className="cursor-pointer p-2 rounded hover:bg-gray-200 transition"
-            onClick={() => addToCart(product)}
+            onClick={handleAddToCart}
           >
             <CiShoppingCart size={"1.4rem"} />
           </button>
@@ -35,6 +45,8 @@ function ProductCard({ product }: { product: Product }) {
     </div>
   );
 }
+
+
 
 
 const Main = () => {
