@@ -108,13 +108,6 @@ const Cartitems = () => {
           </table>
         </div>
 
-        {/* Botón continuar comprando */}
-        <div className="my-5">
-          <button className="flex items-center space-x-3 bg-gray-200 font-semibold rounded p-2 cursor-pointer ">
-            <BsArrowLeft />
-            <span>Continuar comprando</span>
-          </button>
-        </div>
 
         {/* Resumen */}
         <div className="w-[40%] h-fit shadow rounded p-5 space-y-5">

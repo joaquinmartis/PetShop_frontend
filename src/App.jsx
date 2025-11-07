@@ -3,6 +3,7 @@ import { Home } from './Pages/Home'
 import { Cart } from './Pages/Cart'
 import { Order } from './Pages/Order'
 import { CounterPage } from './Pages/Counter'
+import { Toaster } from "react-hot-toast";
 
 import {
   createBrowserRouter,
@@ -43,6 +44,7 @@ const Root = () => {
       <div>
         {/* Acá se van a renderizar las páginas hijas */}
         <Outlet />
+        <Toaster position="top-center" reverseOrder={false} />
       </div>
     </>
 

@@ -3,7 +3,7 @@
 Aplicación **front-end de un PetShop**, desarrollada con **React + Vite**.  
 Permite visualizar productos, buscarlos y agregarlos a un carrito de compras con persistencia local.
 
----
+
 
 ## Tecnologías utilizadas
 
@@ -12,5 +12,3 @@ Permite visualizar productos, buscarlos y agregarlos a un carrito de compras con
 - **Zustand** → gestión global de estado ligera (carrito de compras).  
 - **TailwindCSS** → estilos modernos, responsivos y organizados.  
 - **react-hot-toast** → notificaciones visuales para las acciones del usuario.
-
----

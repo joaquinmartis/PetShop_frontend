@@ -8,7 +8,7 @@ import useCartStore from "../store/cartStore";
 
 
 
-// ✅ Componente ProductCard
+
 function ProductCard({ product }: { product: Product }) {
   const addToCart = useCartStore((state) => state.addToCart);
 
@@ -36,7 +36,7 @@ function ProductCard({ product }: { product: Product }) {
   );
 }
 
-// ✅ Componente principal
+
 const Main = () => {
   const Products: Product[] = [
     {
