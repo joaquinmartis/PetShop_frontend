@@ -17,7 +17,7 @@ import {
   Outlet
 } from 'react-router-dom'
 
-import SideBar from './components/Sidebar'
+import SideBar from './components/Sidebar.tsx'
 function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
