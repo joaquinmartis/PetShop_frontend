@@ -1,42 +1,77 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, NavLink } from "react-router-dom";
 import toast from "react-hot-toast";
 import { CiLogout } from "react-icons/ci";
 import { HiOutlineClipboardList } from "react-icons/hi";
 
-export function ProfilePage () {
+export function ProfilePage() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Leer usuario/token (adaptalo a cómo guardás los datos)
-  const userEmail = typeof window !== "undefined" ? localStorage.getItem("userEmail") : null;
-  const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+  // Verifica sesión al montar el componente
+  useEffect(() => {
+    const checkSession = async () => {
+    try {
+      const response = await fetch("http://localhost:8080/api/users/profile", {
+        method: "GET",
+        credentials: "include",
+      });
+        console.log("Respuesta de perfil:", response);
+      if (!response.ok) {
+        navigate("/auth");
+        return;
+      }
 
-  const handleLogout = () => {
-    // Si en producción usás cookies httponly -> llamar al endpoint logout del backend
-    // Aquí limpiamos localStorage para el modo dev / test
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("userEmail");
-    toast.success("Sesión cerrada");
-    navigate("/login");
+        const userData = await response.json();
+        setUser(userData);
+      } catch (error) {
+        toast.error("Debes iniciar sesión");
+        navigate("/login");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkSession();
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("http://localhost:8080/api/users/logout", {
+        method: "POST",
+        credentials: "include", // 👈 borra la cookie en el backend
+      });
+      toast.success("Sesión cerrada");
+      navigate("/login");
+    } catch {
+      toast.error("Error al cerrar sesión");
+    }
   };
+
+  if (loading)
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-100">
+        <p className="text-gray-600">Cargando perfil...</p>
+      </div>
+    );
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-start justify-center py-16 px-4">
       <div className="w-full max-w-3xl">
-        {/* Card perfil */}
         <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-xl font-bold">
-                {userEmail ? userEmail.charAt(0).toUpperCase() : "U"}
+                {user.firstName?.[0]?.toUpperCase() || "U"}
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-gray-800">
-                  {userEmail ? userEmail : "Usuario invitado"}
+                  {user.firstName} {user.lastName}
                 </h2>
-                <p className="text-sm text-gray-500">
-                  {token ? "Autenticado" : "No autenticado"}
-                </p>
+                <p className="text-sm text-gray-500">{user.email}</p>
               </div>
             </div>
 
@@ -59,7 +94,6 @@ export function ProfilePage () {
           </div>
         </div>
 
-        {/* Orders card (estado vacío) */}
         <div className="bg-white rounded-2xl shadow-md p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -71,15 +105,11 @@ export function ProfilePage () {
                 <p className="text-sm text-gray-500">Historial de pedidos</p>
               </div>
             </div>
-            <NavLink
-              to="/orders"
-              className="text-sm text-indigo-600 hover:underline"
-            >
+            <NavLink to="/orders" className="text-sm text-indigo-600 hover:underline">
               Ver todos
             </NavLink>
           </div>
 
-          {/* Empty state */}
           <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 flex flex-col items-center justify-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -88,10 +118,19 @@ export function ProfilePage () {
               viewBox="0 0 24 24"
               stroke="currentColor"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7h18M5 7v12a2 2 0 002 2h10a2 2 0 002-2V7M9 7V5a3 3 0 016 0v2" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M3 7h18M5 7v12a2 2 0 002 2h10a2 2 0 002-2V7M9 7V5a3 3 0 016 0v2"
+              />
             </svg>
-            <h4 className="text-lg font-medium text-gray-800 mb-1">Ninguna orden activa</h4>
-            <p className="text-sm text-gray-500 mb-4">Cuando realices una compra, aparecerá aquí el resumen del pedido.</p>
+            <h4 className="text-lg font-medium text-gray-800 mb-1">
+              Ninguna orden activa
+            </h4>
+            <p className="text-sm text-gray-500 mb-4">
+              Cuando realices una compra, aparecerá aquí el resumen del pedido.
+            </p>
             <div className="flex items-center gap-3">
               <NavLink
                 to="/"
@@ -108,14 +147,9 @@ export function ProfilePage () {
             </div>
           </div>
         </div>
-
-        {/* Pie con info */}
-        <div className="text-center text-xs text-gray-400 mt-6">
-          <p>Si querés probar el flujo rápido, usá usuario <strong>test</strong> / contraseña <strong>test</strong>.</p>
-        </div>
       </div>
     </div>
   );
-};
+}
 
 export default ProfilePage;

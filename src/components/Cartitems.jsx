@@ -1,12 +1,7 @@
-import React from 'react'
-import { AiFillDelete } from 'react-icons/ai'
-import { BsArrowLeft } from 'react-icons/bs'
-
+import React, { useEffect, useState } from "react";
+import { AiFillDelete } from "react-icons/ai";
 import useCartStore from "../store/cartStore";
-
-import image from '../assets/Dispenser.webp'
-
-
+import { useNavigate } from "react-router-dom";
 
 const Cartitems = () => {
   const { items, removeFromCart, updateQty } = useCartStore((state) => state);
@@ -14,133 +9,188 @@ const Cartitems = () => {
     (total, item) => total + item.price * item.quantity,
     0
   );
-  const shipping = 10000; // Assuming 10% tax
+  const shipping = 10000;
   const total = subtotal + shipping;
+  const navigate = useNavigate();
+
+  const [showEmpty, setShowEmpty] = useState(items.length === 0);
+
+  // Detecta cuándo queda vacío el carrito para animar el cambio
+  useEffect(() => {
+    if (items.length === 0) {
+      const timeout = setTimeout(() => setShowEmpty(true), 250); // da tiempo a desaparecer
+      return () => clearTimeout(timeout);
+    } else {
+      setShowEmpty(false);
+    }
+  }, [items.length]);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const response = await fetch("http://localhost:8080/api/users/profile", {
+          method: "GET",
+          credentials: "include",
+        });
+        if (!response.ok) navigate("/auth");
+      } catch {
+        navigate("/auth");
+      }
+    };
+    checkSession();
+  }, [navigate]);
 
   return (
-    <div className="w-11/12 m-auto py-10">
-      <h1 className="text-3xl font-bold ">Carrito de Compras</h1>
-      <p className="text-sm text-gray-400">Hay {items.reduce((sum, i) => sum + i.quantity, 0)} items en tu carrito</p>
+    <div className="max-w-7xl mx-auto px-4 py-10 space-y-6">
+      <div className="text-center sm:text-left">
+        <h1 className="text-3xl font-bold mb-1">Carrito de Compras</h1>
+        <p className="text-sm text-gray-500">
+          Hay {items.reduce((sum, i) => sum + i.quantity, 0)} ítems en tu carrito
+        </p>
+      </div>
 
-      <section className="flex justify-between items-center space-x-10">
-        <div className="w-[60%] space-y-3">
-          <table className="w-full">
-            <thead className='border-b'>
-              <tr className="text-left text-gray-40">
-                <th className="py-2">Producto</th>
-                <th className="py-2">Precio</th>
-                <th className="py-2">Cantidad</th>
-                <th className="py-2">Total</th>
-                <th className="py-2 lex justify-center items-center">Eliminar</th>
-              </tr>
-            </thead>
+      <section className="flex flex-col lg:flex-row gap-8 transition-all duration-300">
+        {/* 🛒 Lista de productos */}
+        <div className="flex-1 overflow-x-auto transition-all duration-300">
+          {items.length > 0 ? (
+            <table className="w-full border-separate border-spacing-y-3 transition-opacity duration-300 opacity-100">
+              <thead className="hidden sm:table-header-group text-gray-600">
+                <tr>
+                  <th className="text-left pb-2">Producto</th>
+                  <th className="text-left pb-2">Precio</th>
+                  <th className="text-left pb-2">Cantidad</th>
+                  <th className="text-left pb-2">Total</th>
+                  <th className="text-center pb-2">Eliminar</th>
+                </tr>
+              </thead>
 
-            <tbody className='space-y-20'>
-
-              {items.map((item) => (
-
-
-
-                <tr key={item.id} className="bprder-dashed border-b">
-                  <td className="py-5">
-                    <div className="flex items-center space-x-3 py-2">
+              <tbody>
+                {items.map((item) => (
+                  <tr
+                    key={item.id}
+                    className="bg-white shadow-sm rounded-xl sm:rounded-lg sm:table-row block mb-4 sm:mb-0 hover:shadow-md transition-all duration-200"
+                  >
+                    {/* Producto */}
+                    <td className="flex sm:table-cell items-center sm:items-start sm:space-x-4 sm:py-3 p-3">
                       <img
                         src={new URL(item.image[0], import.meta.url).href}
                         alt={item.title}
-                        width={80}
-                        height={80}
-                        className="rounded-md mr-4"
+                        className="w-20 h-20 object-cover rounded-md border border-gray-100 mr-4"
                       />
                       <div>
-                        <h1 className="text-xl font-bold">{item.title}</h1>
-                        <p className="text-sm text-gray-500">Descripción breve</p>
+                        <h1 className="font-semibold text-gray-800 text-base">
+                          {item.title}
+                        </h1>
+                        <p className="text-xs text-gray-500">
+                          Descripción breve del producto
+                        </p>
                       </div>
-                    </div>
-                  </td>
-                  <td className="text-gray-700">${item.price.toFixed(2)}</td>
+                    </td>
 
-                  <td>
-                    <div className="flex flex-col items-center mt-2">
-                      {/* Contenedor principal */}
-                      <div className="flex items-center border rounded-full overflow-hidden">
-                        {/* Botón de restar */}
-                        <button
-                          onClick={() => updateQty("decrement", item.id)}
-                          className="px-3 py-1 text-gray-500 hover:text-gray-700 disabled:text-gray-300"
-                          disabled={item.quantity <= 1}
-                        >
-                          -
-                        </button>
+                    {/* Precio */}
+                    <td className="p-3 text-gray-700 hidden sm:table-cell">
+                      ${item.price.toFixed(2)}
+                    </td>
 
-                        {/* Cantidad */}
-                        <span className="px-4 text-sm font-medium text-gray-800 select-none">
-                          {item.quantity}
-                        </span>
-
-                        {/* Botón de sumar */}
-                        <button
-                          onClick={() => updateQty("increment", item.id)}
-                          className="px-3 py-1 text-blue-500 hover:text-blue-700"
-                        >
-                          +
-                        </button>
+                    {/* Cantidad */}
+                    <td className="p-3">
+                      <div className="flex flex-col items-start sm:items-center">
+                        <div className="flex items-center border rounded-full overflow-hidden">
+                          <button
+                            onClick={() => updateQty("decrement", item.id)}
+                            className="px-3 py-1 text-gray-500 hover:text-gray-700 disabled:text-gray-300"
+                            disabled={item.quantity <= 1}
+                          >
+                            −
+                          </button>
+                          <span className="px-4 text-sm font-medium text-gray-800 select-none">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQty("increment", item.id)}
+                            className="px-3 py-1 text-blue-500 hover:text-blue-700"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">
+                          stock no implementado
+                        </p>
                       </div>
+                    </td>
 
-                      {/* Texto inferior */}
-                      <p className="text-xs text-gray-500 mt-1">+ x disponibles (no implementado)</p>
-                    </div>
+                    {/* Total */}
+                    <td className="p-3 font-medium text-gray-800 hidden sm:table-cell">
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </td>
 
-                  </td>
-
-                  <td className="text-gray-700 font-medium">${item.price.toFixed(2) * item.quantity}</td>
-
-                  <td>
-                    <button className="flex justify-center items-center text-red-500 hover:text-red-700 transition cursor-pointer w-full h-full"
-                      onClick={() => removeFromCart(item.id)}>
-                      <AiFillDelete size={"1.5rem"} />
-                    </button>
-                  </td>
-                </tr>
-
-              ))}
-
-            </tbody>
-          </table>
+                    {/* Eliminar */}
+                    <td className="p-3 text-center">
+                      <button
+                        className="text-red-500 hover:text-red-700 transition"
+                        onClick={() => removeFromCart(item.id)}
+                      >
+                        <AiFillDelete size={"1.4rem"} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="text-center text-gray-500 py-10 transition-all duration-300">
+              Tu carrito está vacío 🛒
+            </div>
+          )}
         </div>
 
-
-        {/* Resumen */}
-        <div className="w-[40%] h-fit shadow rounded p-5 space-y-5">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            Resumen de Compra
-          </h2>
-          <div className="flex justify-between items-center border-b border-gray-500 p-2">
-            <h1 className='text-xl'>Subtotal</h1>
-            <p>${subtotal.toFixed(2)}</p>
-          </div>
-
-          <div className="flex justify-between items-center border-b  border-gray-500 p-2">
-            <h1 className='text-xl'>Descuento</h1>
-            <p>$0.00</p>
-          </div>
-
-          <div className="flex justify-between items-center border-gray-500 p-2">
-            <h1 className='text-xl'>Envío</h1>
-            <p>${shipping.toFixed(2)}</p>
-          </div>
-
-          <div className="flex justify-between text-lg font-semibold text-gray-900 border-t border-gray-500 pt-3">
-            <h1 className='text-xl'>Total</h1>
-            <p>${total.toFixed(2)}</p>
-          </div>
-
-          <button className="w-full p-2 bg-gray-800 text-center text-white rounded cursor-pointer ">
-            Finalizar Compra
-          </button>
+        {/* 💰 Resumen */}
+        <div
+          className={`lg:w-[35%] w-full h-fit shadow-lg rounded-xl p-6 space-y-5 sticky top-10 border transition-all duration-500 ${
+            showEmpty
+              ? "bg-gray-100 text-gray-400 border-gray-200"
+              : "bg-white text-gray-800 border-transparent"
+          }`}
+        >
+          {!showEmpty ? (
+            <>
+              <h2 className="text-xl font-semibold text-gray-800">
+                Resumen de Compra
+              </h2>
+              <div className="flex justify-between items-center border-b border-gray-200 pb-2">
+                <span>Subtotal</span>
+                <span className="font-medium">${subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center border-b border-gray-200 pb-2">
+                <span>Descuento</span>
+                <span className="font-medium">$0.00</span>
+              </div>
+              <div className="flex justify-between items-center border-b border-gray-200 pb-2">
+                <span>Envío</span>
+                <span className="font-medium">${shipping.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center text-lg font-semibold pt-3">
+                <span>Total</span>
+                <span>${total.toFixed(2)}</span>
+              </div>
+              <button className="w-full py-3 bg-gray-900 text-white rounded-full font-medium hover:bg-gray-800 transition">
+                Finalizar Compra
+              </button>
+            </>
+          ) : (
+            <div className="text-center space-y-2 transition-opacity duration-300">
+              <h2 className="text-xl font-semibold text-gray-500">
+                Resumen vacío
+              </h2>
+              <p className="text-sm text-gray-400">
+                No hay productos en el carrito actualmente.
+              </p>
+            </div>
+          )}
         </div>
       </section>
     </div>
   );
 };
 
-export default Cartitems
+export default Cartitems;

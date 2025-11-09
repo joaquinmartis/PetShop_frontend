@@ -43,9 +43,9 @@ const useCartStore = create<CartSate>()(
                 {
                   quantity: 1,
                   id: product.id,
-                  title: product.title,
+                  title: product.name,
                   price: product.price,
-                  image: product.image,
+                  image: [product.imageUrl],
                 },
               ],
         });

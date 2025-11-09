@@ -1,14 +1,29 @@
-type Category = {
+export type Category = {
   id: number;
   name: string;
-  image: string;
+  description: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type Product = {
+
+
+
+
   id: number;
-  title: string;
-  price: number;
+  name: string;
   description: string;
-  //category: Category;
-  image: string[];
+  price: number;
+  stock: number;
+
+  category: Category;
+
+  imageUrl: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+
+
 };
