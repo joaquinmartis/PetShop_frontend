@@ -2,29 +2,40 @@ import React, { useState } from "react";
 import { CiShoppingCart } from "react-icons/ci";
 import useCartStore from "../store/cartStore";
 import { Product } from "../types/types";
+import { CartItem } from "../types/types";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 function ProductCard({ product }: { product: Product }) {
-  const addToCart = useCartStore((state) => state.addToCart);
+  const { addToCart } = useCartStore();
   const [showModal, setShowModal] = useState(false);
+  const [adding, setAdding] = useState(false);
   const navigate = useNavigate();
 
   const handleAddToCart = async () => {
+    setAdding(true);
     try {
-      const response = await fetch("http://localhost:8080/api/users/profile", {
+      // 🔹 Verificar sesión
+      const authResponse = await fetch("http://localhost:8080/api/users/profile", {
         method: "GET",
         credentials: "include",
       });
 
-      if (!response.ok) {
+      if (!authResponse.ok) {
+        toast.error("Debes iniciar sesión");
         navigate("/auth");
         return;
       }
 
-      addToCart(product);
+      // 🔹 Agregar al carrito usando el store (que llama al backend)
+      await addToCart(product);
+      toast.success(`${product.name} agregado al carrito`);
+
     } catch (error) {
-      console.error("Error al verificar sesión:", error);
-      navigate("/auth");
+      console.error("Error al agregar al carrito:", error);
+      toast.error(error instanceof Error ? error.message : "Error al agregar al carrito");
+    } finally {
+      setAdding(false);
     }
   };
 
@@ -37,7 +48,7 @@ function ProductCard({ product }: { product: Product }) {
       >
         <div className="w-full h-48 bg-gray-50 flex items-center justify-center overflow-hidden">
           <img
-            src={product.imageUrl?.[0] || "/placeholder.png"}
+            src={product.imageUrl || "https://via.placeholder.com/300x300?text=Sin+Imagen"}
             alt={product.name}
             className="object-contain w-full h-full p-3"
           />
@@ -57,15 +68,26 @@ function ProductCard({ product }: { product: Product }) {
           </div>
 
           <div className="flex justify-between items-center mt-3">
-            <p className="text-xl font-bold text-gray-800">${product.price}.00</p>
+            <p className="text-xl font-bold text-gray-800">${product.price.toFixed(2)}</p>
             <button
-              className="p-2 rounded-full hover:bg-gray-200 transition"
+              className={`p-2 rounded-full transition ${adding
+                  ? 'bg-gray-300 cursor-wait'
+                  : 'hover:bg-gray-200'
+                }`}
               onClick={(e) => {
-                e.stopPropagation(); // Evita abrir el modal
+                e.stopPropagation();
                 handleAddToCart();
               }}
+              disabled={adding}
             >
-              <CiShoppingCart size={"1.4rem"} />
+              {adding ? (
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+              ) : (
+                <CiShoppingCart size={"1.4rem"} />
+              )}
             </button>
           </div>
         </div>
@@ -85,9 +107,9 @@ function ProductCard({ product }: { product: Product }) {
             <div className="flex flex-col md:flex-row gap-6">
               <div className="flex-1 flex justify-center items-center">
                 <img
-                  src={product.imageUrl?.[0] || "/placeholder.png"}
+                  src={product.imageUrl || "https://via.placeholder.com/300x300?text=Sin+Imagen"}
                   alt={product.name}
-                  className="object-contain max-h-96 rounded-xl"
+                  className="object-contain w-full h-full p-3"
                 />
               </div>
 
@@ -99,21 +121,55 @@ function ProductCard({ product }: { product: Product }) {
                   <p className="text-gray-600 text-sm mb-4">
                     {product.description}
                   </p>
+
+                  {product.stock !== undefined && (
+                    <div className="mb-4">
+                      {product.stock === 0 ? (
+                        <span className="text-red-500 font-semibold">Sin stock</span>
+                      ) : product.stock < 10 ? (
+                        <span className="text-orange-500 font-semibold">
+                          ¡Solo quedan {product.stock}!
+                        </span>
+                      ) : (
+                        <span className="text-green-500 font-semibold">
+                          En stock ({product.stock} disponibles)
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-4">
                   <p className="text-2xl font-bold text-gray-900 mb-4">
-                    ${product.price}.00
+                    ${product.price.toFixed(2)}
                   </p>
                   <button
-                    className="bg-black text-white px-6 py-3 rounded-xl w-full hover:bg-gray-800 transition"
+                    className={`px-6 py-3 rounded-xl w-full transition flex items-center justify-center gap-2 ${adding || product.stock === 0
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-black text-white hover:bg-gray-800'
+                      }`}
                     onClick={() => {
                       handleAddToCart();
-                      setShowModal(false);
+                      if (!adding) setShowModal(false);
                     }}
+                    disabled={adding || product.stock === 0}
                   >
-                    <CiShoppingCart className="inline mr-2" />
-                    Agregar al carrito
+                    {adding ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Agregando...
+                      </>
+                    ) : product.stock === 0 ? (
+                      'Sin stock'
+                    ) : (
+                      <>
+                        <CiShoppingCart size={"1.4rem"} />
+                        Agregar al carrito
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

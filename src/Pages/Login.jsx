@@ -16,7 +16,7 @@ export function LoginPage() {
       const res = await fetch("http://localhost:8080/api/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // 👈 necesario para enviar/recibir cookies HTTP-only
+        credentials: "include", // 👈 necesario para cookies HTTP-only
         body: JSON.stringify({ email, password }),
       });
 
@@ -25,8 +25,19 @@ export function LoginPage() {
         throw new Error(err.message || "Error al iniciar sesión");
       }
 
+      // 🔹 Parsear el usuario logueado
+      const user = await res.json();
+
       toast.success("Inicio de sesión exitoso");
-      navigate("/profile"); // redirige al perfil
+
+      // 🔹 Redirección según tipo de usuario
+      if (user.role === "WAREHOUSE") {
+        navigate("/backoffice");
+        return;
+      } else {
+        navigate("/profile");
+      }
+
     } catch (error) {
       console.error("Error al iniciar sesión:", error);
       toast.error(error.message);

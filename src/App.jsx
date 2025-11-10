@@ -6,7 +6,8 @@ import { CounterPage } from './Pages/Counter'
 import { LoginPage } from './Pages/Login'
 import { AuthPromptPage } from "./Pages/AuthPage";
 import { RegisterPage } from "./Pages/RegisterPage";
-import { ProfilePage } from "./Pages/ProfilePage";
+import { ProfilePage } from "./Pages/ProfilePage.tsx";
+import { Backoffice } from "./Pages/Backoffice.tsx";
 import { Toaster } from "react-hot-toast";
 
 import {
@@ -31,6 +32,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/backoffice" element={<Backoffice />} />
       </Route>
     )
   )

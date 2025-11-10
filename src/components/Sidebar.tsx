@@ -92,7 +92,8 @@ const SideBar = () => {
           </button>
 
           {showCategories && (
-            <div className="absolute left-12 top-0 w-64 bg-white rounded-lg shadow-lg border p-3 z-40">
+            <div className="absolute left-full ml-2 top-0 w-64 bg-white rounded-lg shadow-lg border p-3 z-40">
+
               <button
                 onClick={handleVerTodo}
                 className="block w-full text-left px-3 py-2 rounded-md text-sm font-medium bg-gray-100 hover:bg-gray-200 mb-2"
