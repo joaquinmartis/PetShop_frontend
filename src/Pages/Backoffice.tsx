@@ -61,6 +61,10 @@ const SHIPPING_METHODS = {
   COURIER: "Courier"
 };
 
+
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
+
 export function Backoffice() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -73,7 +77,7 @@ export function Backoffice() {
   useEffect(() => {
     const checkAuthAndLoadOrders = async () => {
       try {
-        const profileRes = await fetch("http://localhost:8080/api/users/profile", {
+        const profileRes = await fetch(`${BASE_URL}/users/profile`, {
           credentials: "include",
         });
 
@@ -105,7 +109,7 @@ export function Backoffice() {
     // ✅ Nueva función: cerrar sesión
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:8080/api/users/logout", {
+      await fetch(`${BASE_URL}/users/logout`, {
         method: "POST",
         credentials: "include",
       });
@@ -119,8 +123,8 @@ export function Backoffice() {
   const fetchOrders = async () => {
     try {
       const url = statusFilter === "ALL" 
-        ? "http://localhost:8080/api/backoffice/orders?page=0&size=100"
-        : `http://localhost:8080/api/backoffice/orders?status=${statusFilter}&page=0&size=100`;
+        ? `${BASE_URL}/backoffice/orders?page=0&size=100`
+        : `${BASE_URL}/backoffice/orders?status=${statusFilter}&page=0&size=100`;
       
       const response = await fetch(url, { credentials: "include" });
 
@@ -140,7 +144,7 @@ export function Backoffice() {
   const handleReadyToShip = async (orderId: number) => {
     setActionLoading(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/backoffice/orders/${orderId}/ready-to-ship`, {
+      const response = await fetch(`${BASE_URL}/backoffice/orders/${orderId}/ready-to-ship`, {
         method: "PATCH",
         credentials: "include",
       });
@@ -171,7 +175,7 @@ export function Backoffice() {
 
     setActionLoading(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/backoffice/orders/${orderId}/ship`, {
+      const response = await fetch(`${BASE_URL}/backoffice/orders/${orderId}/ship`, {
         method: "PATCH",
         credentials: "include",
       });
@@ -196,7 +200,7 @@ export function Backoffice() {
   const handleMarkDelivered = async (orderId: number) => {
     setActionLoading(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/backoffice/orders/${orderId}/deliver`, {
+      const response = await fetch(`${BASE_URL}/backoffice/orders/${orderId}/deliver`, {
         method: "PATCH",
         credentials: "include",
       });
@@ -227,7 +231,7 @@ export function Backoffice() {
 
     setActionLoading(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/backoffice/orders/${orderId}/reject`, {
+      const response = await fetch(`${BASE_URL}/backoffice/orders/${orderId}/reject`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -252,7 +256,7 @@ export function Backoffice() {
   const handleUpdateShippingMethod = async (orderId: number, method: string) => {
     setActionLoading(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/backoffice/orders/${orderId}/shipping-method`, {
+      const response = await fetch(`${BASE_URL}/backoffice/orders/${orderId}/shipping-method`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

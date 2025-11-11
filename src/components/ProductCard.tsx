@@ -6,7 +6,10 @@ import { CartItem } from "../types/types";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
 function ProductCard({ product }: { product: Product }) {
+  
   const { addToCart } = useCartStore();
   const [showModal, setShowModal] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -16,7 +19,7 @@ function ProductCard({ product }: { product: Product }) {
     setAdding(true);
     try {
       // 🔹 Verificar sesión
-      const authResponse = await fetch("http://localhost:8080/api/users/profile", {
+      const authResponse = await fetch(`${BASE_URL}/users/profile`, {
         method: "GET",
         credentials: "include",
       });
@@ -51,6 +54,7 @@ function ProductCard({ product }: { product: Product }) {
           <img
             src={product.imageUrl || "https://via.placeholder.com/300x300?text=Sin+Imagen"}
             alt={product.name}
+            loading="lazy"
             className="object-contain w-full h-full p-3"
           />
         </div>
@@ -72,8 +76,8 @@ function ProductCard({ product }: { product: Product }) {
             <p className="text-xl font-bold text-gray-800">${product.price.toFixed(2)}</p>
             <button
               className={`p-2 rounded-full transition ${adding
-                  ? 'bg-gray-300 cursor-wait'
-                  : 'hover:bg-gray-200'
+                ? 'bg-gray-300 cursor-wait'
+                : 'hover:bg-gray-200'
                 }`}
               onClick={(e) => {
                 e.stopPropagation();
@@ -110,6 +114,7 @@ function ProductCard({ product }: { product: Product }) {
                 <img
                   src={product.imageUrl || "https://via.placeholder.com/300x300?text=Sin+Imagen"}
                   alt={product.name}
+                  loading="lazy"
                   className="object-contain w-full h-full p-3"
                 />
               </div>
@@ -146,8 +151,8 @@ function ProductCard({ product }: { product: Product }) {
                   </p>
                   <button
                     className={`px-6 py-3 rounded-xl w-full transition flex items-center justify-center gap-2 ${adding || product.stock === 0
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-black text-white hover:bg-gray-800'
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-black text-white hover:bg-gray-800'
                       }`}
                     onClick={() => {
                       handleAddToCart();

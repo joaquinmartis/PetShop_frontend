@@ -9,6 +9,8 @@ interface Category {
   name: string;
 }
 
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
 const SideBar = () => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -23,7 +25,7 @@ const SideBar = () => {
 
     (async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/categories", {
+        const res = await fetch(`${BASE_URL}/categories`, {
           credentials: "include",
           signal: ctrl.signal,
         });

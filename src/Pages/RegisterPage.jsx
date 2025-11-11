@@ -2,6 +2,10 @@ import React, { useState } from "react";
 import { useNavigate, NavLink } from "react-router-dom";
 import toast from "react-hot-toast";
 
+
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
+
 export function RegisterPage() {
   const [formData, setFormData] = useState({
     firstName: "",
@@ -25,7 +29,7 @@ export function RegisterPage() {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://localhost:8080/api/users/register", {
+      const res = await fetch(`${BASE_URL}/users/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

@@ -5,6 +5,7 @@ import ProductCard from "./ProductCard";
 import { Product } from "../types/types";
 
 const PAGE_SIZE = 12;
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 interface Category {
   id: number;
@@ -40,7 +41,7 @@ export default function Main() {
     const ctrl = new AbortController();
     (async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/categories", {
+        const res = await fetch(`${BASE_URL}/categories`, {
           credentials: "include",
           signal: ctrl.signal,
         });
@@ -80,7 +81,7 @@ export default function Main() {
           params.set("name", searchTerm.trim());
 
         const res = await fetch(
-          `http://localhost:8080/api/products?${params.toString()}`,
+          `${BASE_URL}/products?${params.toString()}`,
           { credentials: "include", signal: ctrl.signal }
         );
         

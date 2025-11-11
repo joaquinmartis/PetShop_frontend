@@ -55,6 +55,8 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: str
   REJECTED: { label: 'Rechazado', color: 'text-gray-800', bgColor: 'bg-gray-100' },
 };
 
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
 export function ProfilePage() {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
@@ -66,7 +68,7 @@ export function ProfilePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const profileRes = await fetch("http://localhost:8080/api/users/profile", {
+        const profileRes = await fetch(`${BASE_URL}/users/profile`, {
           method: "GET",
           credentials: "include",
         });
@@ -101,7 +103,7 @@ export function ProfilePage() {
   const fetchOrders = async () => {
     setLoadingOrders(true);
     try {
-      const ordersRes = await fetch("http://localhost:8080/api/orders?page=0&size=20", {
+      const ordersRes = await fetch(`${BASE_URL}/orders?page=0&size=20`, {
         credentials: "include",
       });
 
@@ -118,7 +120,7 @@ export function ProfilePage() {
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:8080/api/users/logout", {
+      await fetch(`${BASE_URL}/users/logout`, {
         method: "POST",
         credentials: "include",
       });
@@ -137,7 +139,7 @@ export function ProfilePage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/api/orders/${orderId}/cancel`, {
+      const response = await fetch(`${BASE_URL}/orders/${orderId}/cancel`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

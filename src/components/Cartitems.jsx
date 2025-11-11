@@ -4,6 +4,8 @@ import useCartStore from "../store/cartStore";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
 const Cartitems = () => {
   const { items, removeFromCart, updateQty, syncCart, createOrder } = useCartStore((state) => state);
 
@@ -23,7 +25,7 @@ const Cartitems = () => {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const response = await fetch("http://localhost:8080/api/users/profile", {
+        const response = await fetch(`${BASE_URL}/users/profile`, {
           method: "GET",
           credentials: "include",
         });

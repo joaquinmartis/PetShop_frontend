@@ -30,7 +30,7 @@ interface BackendCartItem {
   updatedAt: string;
 }
 
-// 💡 Nuevo: Interfaz para la respuesta completa del Backend (Endpoint: GET /api/cart)
+// 💡 Nuevo: Interfaz para la respuesta completa del Backend (Endpoint: GET /cart)
 interface CartApiResponse {
   id: number;
   userId: number;
@@ -50,8 +50,7 @@ interface CartSate {
   updateQty: (type: "increment" | "decrement", id: number) => Promise<void>;
   createOrder: (shippingAddress: string, notes: string) => Promise<void>;
 }
-
-const BASE_URL = 'http://localhost:8080';
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 const useCartStore = create<CartSate>()(
   persist(
@@ -60,10 +59,10 @@ const useCartStore = create<CartSate>()(
       isLoaded: false,
 
       // =================================================================
-      // 🟢 1. SINCRONIZACIÓN INICIAL CON EL BACKEND (GET /api/cart)
+      // 🟢 1. SINCRONIZACIÓN INICIAL CON EL BACKEND (GET /cart)
       // =================================================================
       syncCart: async () => {
-        const backendUrl = `${BASE_URL}/api/cart`;
+        const backendUrl = `${BASE_URL}/cart`;
 
         try {
           const response = await fetch(backendUrl, {
@@ -106,12 +105,12 @@ const useCartStore = create<CartSate>()(
 
 
       // =================================================================
-      // 🟢 2. AGREGAR AL CARRITO (POST /api/cart/items)
+      // 🟢 2. AGREGAR AL CARRITO (POST /cart/items)
       // =================================================================
       addToCart: async (product: Product) => {
         const productId = product.id;
         const quantity = 1;
-        const backendUrl = `${BASE_URL}/api/cart/items`;
+        const backendUrl = `${BASE_URL}/cart/items`;
 
         // La lógica de verificación de existencia ya no es necesaria, 
         // ya que el backend debería manejar si es una adición o un incremento.
@@ -141,7 +140,7 @@ const useCartStore = create<CartSate>()(
       },
 
       // =================================================================
-      // 🟢 3. ELIMINAR DEL CARRITO (DELETE /api/cart/items/{id})
+      // 🟢 3. ELIMINAR DEL CARRITO (DELETE /cart/items/{id})
       // =================================================================
       removeFromCart: async (id: number) => {
         // Usamos el product ID para encontrar el item de carrito ID
@@ -153,7 +152,7 @@ const useCartStore = create<CartSate>()(
         // con el item del carrito. Si tu API requiere el ID del *CartItem*,
         // deberás guardar ese ID en el estado local. Por ahora, seguimos con el ID del producto.
 
-        const backendUrl = `${BASE_URL}/api/cart/items/${id}`;
+        const backendUrl = `${BASE_URL}/cart/items/${id}`;
 
         try {
           const response = await fetch(backendUrl, {
@@ -178,7 +177,7 @@ const useCartStore = create<CartSate>()(
       },
 
       // =================================================================
-      // 🟢 4. ACTUALIZAR CANTIDAD (PATCH /api/cart/items)
+      // 🟢 4. ACTUALIZAR CANTIDAD (PATCH /cart/items)
       // =================================================================
       updateQty: async (type: "increment" | "decrement", id: number) => {
         const item = get().items.find((item) => item.id === id);
@@ -194,7 +193,7 @@ const useCartStore = create<CartSate>()(
           return;
         }
 
-        const backendUrl = `${BASE_URL}/api/cart/items/${item.id}`;
+        const backendUrl = `${BASE_URL}/cart/items/${item.id}`;
 
         try {
           const response = await fetch(backendUrl, {
@@ -218,7 +217,7 @@ const useCartStore = create<CartSate>()(
         }
       },
       createOrder: async (shippingAddress: string, notes: string) => {
-        const backendUrl = `${BASE_URL}/api/orders`;
+        const backendUrl = `${BASE_URL}/orders`;
         const ShippingAddress = shippingAddress;
         const Notes = notes;
         try {
