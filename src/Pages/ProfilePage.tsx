@@ -72,7 +72,7 @@ export function ProfilePage() {
         });
 
         if (!profileRes.ok) {
-          toast.error("Debes iniciar sesión");
+          //toast.error("Debes iniciar sesión");
           navigate("/auth");
           return;
         }

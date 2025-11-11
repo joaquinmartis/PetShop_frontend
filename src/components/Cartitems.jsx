@@ -19,18 +19,7 @@ const Cartitems = () => {
   const [shippingAddress, setShippingAddress] = useState("");
   const [notes, setNotes] = useState("");
 
-  // Detecta cuándo queda vacío el carrito
-  useEffect(() => {
-    syncCart();
-    if (items.length === 0) {
-      const timeout = setTimeout(() => setShowEmpty(true), 250);
-      return () => clearTimeout(timeout);
-    } else {
-      setShowEmpty(false);
-    }
-  }, [items.length, syncCart]);
-
-  // Detecta si está autenticado
+    // Detecta si está autenticado
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -45,6 +34,19 @@ const Cartitems = () => {
     };
     checkSession();
   }, [navigate]);
+  
+  // Detecta cuándo queda vacío el carrito
+  useEffect(() => {
+    syncCart();
+    if (items.length === 0) {
+      const timeout = setTimeout(() => setShowEmpty(true), 250);
+      return () => clearTimeout(timeout);
+    } else {
+      setShowEmpty(false);
+    }
+  }, [items.length, syncCart]);
+
+
 
   // Maneja la creación del pedido con los campos nuevos
   const handleCreateOrder = () => {

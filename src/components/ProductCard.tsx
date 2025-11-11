@@ -29,7 +29,8 @@ function ProductCard({ product }: { product: Product }) {
 
       // 🔹 Agregar al carrito usando el store (que llama al backend)
       await addToCart(product);
-      toast.success(`${product.name} agregado al carrito`);
+      console.log("Producto agregado al carrito:", product);
+
 
     } catch (error) {
       console.error("Error al agregar al carrito:", error);
