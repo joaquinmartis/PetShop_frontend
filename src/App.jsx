@@ -9,6 +9,8 @@ import { ProfilePage } from "./Pages/ProfilePage.tsx";
 import { Backoffice } from "./Pages/Backoffice.tsx";
 import { Toaster } from "react-hot-toast";
 
+
+
 import {
   createBrowserRouter,
   RouterProvider,
@@ -18,6 +20,8 @@ import {
 } from 'react-router-dom'
 
 import SideBar from './components/Sidebar.tsx'
+
+
 function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
@@ -46,16 +50,14 @@ export default App
 
 const Root = () => {
   return (
-    <>
-      <div>
-        <SideBar />
+    <div className="flex">
+      <SideBar />
+        <div className="flex-1 pt-14 pt-0"> {/* espacio por el header */}
+          <Toaster position="top-center" reverseOrder={false} />
+          <Outlet />
+
+        </div>
       </div>
-      <div>
-        {/* Acá se van a renderizar las páginas hijas */}
-        <Outlet />
-        <Toaster position="top-center" reverseOrder={false} />
-      </div>
-    </>
 
   )
 }

@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState, ChangeEvent, KeyboardEvent } from "react";
 import { HiOutlineMenuAlt2, HiOutlineHome } from "react-icons/hi";
-import { CiShoppingCart } from "react-icons/ci";
+import { CiShoppingCart, CiSearch } from "react-icons/ci";
 import { FiUser } from "react-icons/fi";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import useCartStore from "../store/cartStore";
 
 interface Category {
   id: number;
@@ -11,139 +12,264 @@ interface Category {
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
-const SideBar = () => {
+const SideBar: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [showCategories, setShowCategories] = useState(false);
-  const menuRef = useRef<HTMLLIElement | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
+  const [open, setOpen] = useState(false);
+  const [sidebarHovered, setSidebarHovered] = useState(false);
 
-  // 🔹 Cargar categorías del backend
+  const count = useCartStore((state) =>
+    state.items.reduce((acc, item) => acc + item.quantity, 0)
+  );
+
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchInputMobileRef = useRef<HTMLInputElement>(null);
+  const searchInputDesktopRef = useRef<HTMLInputElement>(null);
+
+  const params = new URLSearchParams(location.search);
+  const searchTerm = params.get("search") || "";
+  const isHomePage = location.pathname === "/";
+
   useEffect(() => {
     const ctrl = new AbortController();
-    abortRef.current = ctrl;
-
     (async () => {
       try {
         const res = await fetch(`${BASE_URL}/categories`, {
           credentials: "include",
           signal: ctrl.signal,
         });
-        if (!res.ok) throw new Error("No se pudieron cargar categorías");
-        const data: Category[] = await res.json();
-        if (Array.isArray(data)) setCategories(data);
-      } catch (err: unknown) {
-        if (err instanceof Error && err.name !== "AbortError") {
-          console.error(err);
-        }
+        const data = (await res.json()) as Category[];
+        setCategories(data);
+      } catch (err) {
+        if ((err as any)?.name !== "AbortError") console.error(err);
       }
     })();
-
     return () => ctrl.abort();
   }, []);
 
-  // 🔹 Cerrar menú al hacer clic fuera
+  // Limpiar ambos inputs cuando cambia la URL sin parámetro search
   useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowCategories(false);
-      }
-    };
+    if (!searchTerm) {
+      if (searchInputMobileRef.current) searchInputMobileRef.current.value = "";
+      if (searchInputDesktopRef.current) searchInputDesktopRef.current.value = "";
+    }
+  }, [searchTerm]);
 
-    document.addEventListener("click", onDocClick);
-    return () => document.removeEventListener("click", onDocClick);
-  }, []);
-
-  const handleUserClick = () => navigate("/profile");
-
-  // 🔹 Navegación por categoría
-  const handleCategoryClick = (cat: Category) => {
-    navigate(`/?category=${encodeURIComponent(cat.name)}`);
+  const goToCategory = (c: Category) => {
+    navigate(`/?category=${encodeURIComponent(c.name)}`);
     setShowCategories(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setOpen(false);
   };
 
-  // 🔹 "Ver todo" -> quita el parámetro de categoría
-  const handleVerTodo = () => {
-    navigate("/"); // quita el query param
-    setShowCategories(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const closeSidebar = () => setOpen(false);
+
+  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // Sincronizar ambos inputs
+    if (searchInputMobileRef.current) searchInputMobileRef.current.value = value;
+    if (searchInputDesktopRef.current) searchInputDesktopRef.current.value = value;
+    
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+
+    // Solo buscar automáticamente si estamos en home
+    if (isHomePage) {
+      searchTimerRef.current = setTimeout(() => {
+        const newParams = new URLSearchParams();
+        if (value.trim()) newParams.set("search", value.trim());
+        navigate(`/?${newParams.toString()}`);
+      }, 400);
+    }
+  };
+
+  const handleSearchSubmit = () => {
+    const value = searchInputMobileRef.current?.value || searchInputDesktopRef.current?.value || "";
+    const newParams = new URLSearchParams();
+    if (value.trim()) newParams.set("search", value.trim());
+    navigate(`/?${newParams.toString()}`);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearchSubmit();
+    }
   };
 
   return (
-    <div className="fixed top-0 left-0 h-screen bg-gray-100 shadow-md z-50">
-      <ul className="p-5 space-y-8 relative">
-        {/* 🏠 Home */}
-        <li>
-          <NavLink to="/">
-            <button className="cursor-pointer p-2 rounded hover:bg-gray-200 transition">
-              <HiOutlineHome size={"1.5rem"} />
-            </button>
-          </NavLink>
-        </li>
+    <>
+      {/* HEADER MOBILE */}
+      <header className="fixed top-0 left-0 right-0 h-14 bg-white shadow z-50 flex items-center justify-between px-3 gap-3 lg:hidden">
+        <button className="p-2 rounded bg-gray-100" onClick={() => setOpen(true)}>
+          <HiOutlineMenuAlt2 size={22} />
+        </button>
 
-        {/* 📂 Categorías */}
-        <li className="relative" ref={menuRef}>
-          <button
-            className={`cursor-pointer p-2 rounded transition ${
-              showCategories ? "bg-gray-200" : "hover:bg-gray-200"
-            }`}
-            onClick={() => setShowCategories((prev) => !prev)}
+        {/* LOGO + BUSCADOR */}
+        <div className="flex flex-1 justify-center items-center gap-3">
+          <h1
+            className="text-2xl font-bold cursor-pointer whitespace-nowrap"
+            onClick={() => navigate("/")}
           >
-            <HiOutlineMenuAlt2 size={"1.5rem"} />
+            PetShop
+          </h1>
+
+          <div className="flex items-center bg-gray-100 rounded-full px-3 py-2 w-[30%] sm:w-[50%]">
+            <input
+              ref={searchInputMobileRef}
+              type="text"
+              placeholder="Buscar..."
+              defaultValue={searchTerm}
+              className="bg-transparent outline-none flex-grow text-sm"
+              onChange={handleSearchChange}
+              onKeyDown={handleKeyDown}
+            />
+            <CiSearch
+              size={20}
+              onClick={handleSearchSubmit}
+              className="text-gray-600 cursor-pointer hover:scale-110 transition"
+            />
+          </div>
+        </div>
+      </header>
+
+      {/* HEADER DESKTOP */}
+      <header className="
+  hidden lg:flex fixed top-0 left-0 right-0
+  h-16 bg-white shadow z-40 items-center justify-between px-6 gap-6
+">
+        <h1
+          className="text-3xl font-bold cursor-pointer whitespace-nowrap"
+          onClick={() => navigate("/")}
+        >
+          PetShop
+        </h1>
+
+        <div className="flex items-center bg-gray-100 rounded-full px-4 py-2 w-96">
+          <input
+            ref={searchInputDesktopRef}
+            type="text"
+            placeholder="Buscar productos..."
+            defaultValue={searchTerm}
+            className="bg-transparent outline-none flex-grow text-sm"
+            onChange={handleSearchChange}
+            onKeyDown={handleKeyDown}
+          />
+          <CiSearch
+            size={22}
+            onClick={handleSearchSubmit}
+            className="text-gray-600 cursor-pointer hover:scale-110 transition"
+          />
+        </div>
+      </header>
+
+      {/* OVERLAY */}
+      <div
+        onClick={closeSidebar}
+        className={`lg:hidden fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 ${
+          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+      />
+
+      {/* SIDEBAR */}
+      <aside
+  onMouseEnter={() => setSidebarHovered(true)}
+  onMouseLeave={() => {
+    setSidebarHovered(false);
+    setShowCategories(false);
+  }}
+  className={`
+    fixed top-0 left-0 h-screen bg-white shadow-xl
+    pt-16 lg:pt-16
+    transform transition-all duration-300 ease-out
+
+    w-64
+    ${open ? "translate-x-0" : "-translate-x-full"}
+
+    lg:translate-x-0
+    ${sidebarHovered ? "lg:w-64" : "lg:w-16"}
+
+    z-50 lg:z-30   /* 📌 AQUÍ el truco */
+  `}
+>
+        <nav className="flex flex-col gap-2 px-3 py-4">
+
+          <NavLink
+            to="/"
+            onClick={closeSidebar}
+            className="flex items-center gap-3 p-2 rounded hover:bg-gray-100"
+            title="Inicio"
+          >
+            <HiOutlineHome size={20} className="flex-shrink-0" /> 
+            <span className={`whitespace-nowrap ${sidebarHovered ? "" : "lg:hidden"}`}>Inicio</span>
+          </NavLink>
+
+          <button
+            onClick={() => setShowCategories(!showCategories)}
+            className="flex items-center gap-3 p-2 rounded hover:bg-gray-100"
+            title="Categorías"
+          >
+            <HiOutlineMenuAlt2 size={20} className="flex-shrink-0" />
+            <span className={`whitespace-nowrap ${sidebarHovered ? "" : "lg:hidden"}`}>Categorías</span>
           </button>
 
-          {showCategories && (
-            <div className="absolute left-full ml-2 top-0 w-64 bg-white rounded-lg shadow-lg border p-3 z-40">
-
+          <div
+            className={`transition-all duration-300 overflow-hidden ${
+              showCategories ? "max-h-[600px]" : "max-h-0"
+            }`}
+          >
+            <div className="ml-6 mt-1 border-l border-gray-200 pl-2 py-2 flex flex-col gap-1">
               <button
-                onClick={handleVerTodo}
-                className="block w-full text-left px-3 py-2 rounded-md text-sm font-medium bg-gray-100 hover:bg-gray-200 mb-2"
+                onClick={() => {
+                  navigate("/");
+                  setShowCategories(false);
+                  closeSidebar();
+                }}
+                className="block text-left px-2 py-1 rounded hover:bg-gray-100 text-sm"
               >
                 Ver todo
               </button>
 
-              <div className="flex flex-col max-h-56 overflow-auto gap-1">
-                {categories.length === 0 ? (
-                  <div className="text-sm text-gray-500 px-3 py-2">
-                    Cargando...
-                  </div>
-                ) : (
-                  categories.map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => handleCategoryClick(c)}
-                      className="text-left px-3 py-2 rounded-md text-sm hover:bg-gray-100"
-                    >
-                      {c.name}
-                    </button>
-                  ))
-                )}
-              </div>
+              {categories.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => goToCategory(c)}
+                  className="block w-full text-left px-2 py-1 rounded hover:bg-gray-100 text-sm"
+                >
+                  {c.name}
+                </button>
+              ))}
             </div>
-          )}
-        </li>
+          </div>
 
-        {/* 🛒 Carrito */}
-        <li>
-          <NavLink to="/cart">
-            <button className="cursor-pointer p-2 rounded hover:bg-gray-200 transition">
-              <CiShoppingCart size={"1.5rem"} />
-            </button>
-          </NavLink>
-        </li>
-
-        {/* 👤 Usuario */}
-        <li>
           <button
-            onClick={handleUserClick}
-            className="cursor-pointer p-2 rounded hover:bg-gray-200 transition"
+            onClick={() => {
+              navigate("/cart");
+              closeSidebar();
+            }}
+            className="relative flex items-center gap-3 p-2 rounded hover:bg-gray-100"
+            title="Carrito"
           >
-            <FiUser size={"1.5rem"} />
+            <CiShoppingCart size={22} className="flex-shrink-0" />
+            <span className={`whitespace-nowrap ${sidebarHovered ? "" : "lg:hidden"}`}>Carrito</span>
+
           </button>
-        </li>
-      </ul>
-    </div>
+
+          <button
+            onClick={() => {
+              navigate("/profile");
+              closeSidebar();
+            }}
+            className="flex items-center gap-3 p-2 rounded hover:bg-gray-100"
+            title="Perfil"
+          >
+            <FiUser size={20} className="flex-shrink-0" />
+            <span className={`whitespace-nowrap ${sidebarHovered ? "" : "lg:hidden"}`}>Perfil</span>
+          </button>
+        </nav>
+      </aside>
+    </>
   );
 };
 
