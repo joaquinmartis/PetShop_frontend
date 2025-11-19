@@ -4,24 +4,26 @@ import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
-
-
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
-
 
 export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (isLoading) return; // Prevenir múltiples submissions
+
+    setIsLoading(true);
+
     try {
       const res = await fetch(`${BASE_URL}/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // 👈 necesario para cookies HTTP-only
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
 
@@ -30,23 +32,21 @@ export function LoginPage() {
         throw new Error(err.message || "Error al iniciar sesión");
       }
 
-      // 🔹 Parsear el usuario logueado
       const user = await res.json();
 
       toast.success("Inicio de sesión exitoso");
 
-      // 🔹 Redirección según tipo de usuario
       if (user.role === "WAREHOUSE") {
         navigate("/backoffice");
-        return;
       } else {
         navigate("/profile");
       }
-
     } catch (error) {
       console.error("Error al iniciar sesión:", error);
       toast.error(error.message);
+      setIsLoading(false); // Solo reseteamos si hay error
     }
+    // No reseteamos isLoading si hay éxito porque estamos navegando
   };
 
   return (
@@ -69,7 +69,8 @@ export function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isLoading}
+              className="p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
           </div>
 
@@ -84,23 +85,56 @@ export function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isLoading}
+              className="p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 transition"
+            disabled={isLoading}
+            className="w-full bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 transition disabled:bg-blue-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Iniciar sesión
+            {isLoading ? (
+              <>
+                <svg
+                  className="animate-spin h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                <span>Iniciando sesión...</span>
+              </>
+            ) : (
+              "Iniciar sesión"
+            )}
           </button>
         </form>
 
-        <p className="text-sm text-gray-600 text-center mt-4">
+        <p className="text-sm text-gray-600 text-center mt-4" >
           ¿No tenés cuenta?{" "}
-          <NavLink to="/register" className="text-blue-500 hover:underline font-medium">
-            Crear cuenta
-          </NavLink>
+
+          {isLoading ? (
+            <span className="text-blue-500 hover:underline font-medium cursor-pointer">Crear cuenta</span>
+          ) : (
+            <NavLink to="/register" className="text-blue-500 hover:underline font-medium">
+              Crear cuenta
+            </NavLink>
+          )}
         </p>
       </div>
     </div>

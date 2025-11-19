@@ -67,38 +67,38 @@ export function ProfilePage() {
 
   useEffect(() => {
     const loadData = async () => {
-      try {
-        const profileRes = await fetch(`${BASE_URL}/users/profile`, {
-          method: "GET",
-          credentials: "include",
-        });
+        try {
+          const profileRes = await fetch(`${BASE_URL}/users/profile`, {
+            method: "GET",
+            credentials: "include",
+          });
 
-        if (!profileRes.ok) {
-          //toast.error("Debes iniciar sesión");
+          if (!profileRes.ok) {
+            //toast.error("Debes iniciar sesión");
+            navigate("/auth");
+            return;
+          }
+
+          const userData = await profileRes.json();
+          if (userData.role === "WAREHOUSE") {
+            navigate("/backoffice");
+            return;
+          }
+
+          setUser(userData);
+
+          await fetchOrders();
+
+        } catch (error) {
+          toast.error("Error al cargar datos");
           navigate("/auth");
-          return;
+        } finally {
+          setLoading(false);
         }
+      };
 
-        const userData = await profileRes.json();
-        if (userData.role === "WAREHOUSE") {
-          navigate("/backoffice");
-          return;
-        }
-
-        setUser(userData);
-
-        await fetchOrders();
-
-      } catch (error) {
-        toast.error("Error al cargar datos");
-        navigate("/auth");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [navigate]);
+      loadData();
+    }, [navigate]);
 
   const fetchOrders = async () => {
     setLoadingOrders(true);
