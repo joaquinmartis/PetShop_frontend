@@ -44,6 +44,9 @@ interface CartApiResponse {
 interface CartSate {
   items: CartItem[];
   isLoaded: boolean;
+  isLoading: boolean;
+  isDeleting: boolean;
+
   syncCart: () => Promise<void>;
   addToCart: (product: Product) => Promise<void>;
   removeFromCart: (id: number) => Promise<void>;
@@ -53,10 +56,13 @@ interface CartSate {
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 const useCartStore = create<CartSate>()(
+
   persist(
     (set, get) => ({
       items: [],
       isLoaded: false,
+      isLoading: false,
+      isDeleting: false,
 
       // =================================================================
       // 🟢 1. SINCRONIZACIÓN INICIAL CON EL BACKEND (GET /cart)
@@ -65,6 +71,7 @@ const useCartStore = create<CartSate>()(
         const backendUrl = `${BASE_URL}/cart`;
 
         try {
+
           const response = await fetch(backendUrl, {
             method: 'GET',
             credentials: 'include',
@@ -73,9 +80,11 @@ const useCartStore = create<CartSate>()(
           if (!response.ok) {
             const isAuthError = response.status === 401;
             set({ items: [], isLoaded: true });
+            set({ isLoading: false });
             if (!isAuthError) {
               console.error(`Fallo al sincronizar el carrito: Status ${response.status}`);
             }
+
             return;
           }
 
@@ -89,7 +98,7 @@ const useCartStore = create<CartSate>()(
             quantity: item.quantity,
             id: item.productId, // Usamos el ID del Producto para tracking local
             title: item.productName,
-            price: item.subtotal,
+            price: item.unitPrice,
             image: [item.imageUrl],
           }));
 
@@ -98,6 +107,7 @@ const useCartStore = create<CartSate>()(
         } catch (error) {
           console.error("Error de red al sincronizar el carrito:", error);
           set({ items: [], isLoaded: true }); // Fallback
+
           // Propagamos el error de red para ser manejado por la aplicación si es necesario
           throw error;
         }
@@ -143,6 +153,7 @@ const useCartStore = create<CartSate>()(
       // 🟢 3. ELIMINAR DEL CARRITO (DELETE /cart/items/{id})
       // =================================================================
       removeFromCart: async (id: number) => {
+
         // Usamos el product ID para encontrar el item de carrito ID
         const cartItem = get().items.find((item) => item.id === id);
         if (!cartItem) return;
@@ -155,6 +166,7 @@ const useCartStore = create<CartSate>()(
         const backendUrl = `${BASE_URL}/cart/items/${id}`;
 
         try {
+          set({ isDeleting: true });
           const response = await fetch(backendUrl, {
             method: 'DELETE',
             credentials: 'include',
@@ -170,9 +182,11 @@ const useCartStore = create<CartSate>()(
           await get().syncCart();
 
           toast.success("Producto eliminado del carrito");
-
         } catch (error) {
           throw error;
+        }
+        finally {
+          set({ isDeleting: false });
         }
       },
 
@@ -221,6 +235,7 @@ const useCartStore = create<CartSate>()(
         const ShippingAddress = shippingAddress;
         const Notes = notes;
         try {
+          set({ isLoading: true });
           const response = await fetch(backendUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -238,9 +253,10 @@ const useCartStore = create<CartSate>()(
           await get().syncCart();
 
           toast.success(`Orden Creada`);
-
         } catch (error) {
           throw error;
+        }finally {
+          set({ isLoading: false });
         }
       },
     }),

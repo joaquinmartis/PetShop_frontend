@@ -65,40 +65,47 @@ export function ProfilePage() {
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
+  // Estados para cancelar pedido
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
+
+  const openCancelModal = (orderId: number) => {
+    setOrderToCancel(orderId);
+    setShowCancelModal(true);
+  };
+
   useEffect(() => {
     const loadData = async () => {
-        try {
-          const profileRes = await fetch(`${BASE_URL}/users/profile`, {
-            method: "GET",
-            credentials: "include",
-          });
+      try {
+        const profileRes = await fetch(`${BASE_URL}/users/profile`, {
+          method: "GET",
+          credentials: "include",
+        });
 
-          if (!profileRes.ok) {
-            //toast.error("Debes iniciar sesión");
-            navigate("/auth");
-            return;
-          }
-
-          const userData = await profileRes.json();
-          if (userData.role === "WAREHOUSE") {
-            navigate("/backoffice");
-            return;
-          }
-
-          setUser(userData);
-
-          await fetchOrders();
-
-        } catch (error) {
-          toast.error("Error al cargar datos");
+        if (!profileRes.ok) {
           navigate("/auth");
-        } finally {
-          setLoading(false);
+          return;
         }
-      };
 
-      loadData();
-    }, [navigate]);
+        const userData = await profileRes.json();
+        if (userData.role === "WAREHOUSE") {
+          navigate("/backoffice");
+          return;
+        }
+
+        setUser(userData);
+        await fetchOrders();
+      } catch {
+        toast.error("Error al cargar datos");
+        navigate("/auth");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [navigate]);
 
   const fetchOrders = async () => {
     setLoadingOrders(true);
@@ -131,41 +138,35 @@ export function ProfilePage() {
     }
   };
 
-  const handleCancelOrder = async (orderId: number) => {
-    const reason = prompt('¿Por qué deseas cancelar este pedido?', 'Cambio de opinión');
-    if (!reason || reason.trim() === '') {
-      toast.error('Debes proporcionar una razón');
-      return;
-    }
-
+  const handleCancelOrder = async (orderId: number, reason: string) => {
     try {
       const response = await fetch(`${BASE_URL}/orders/${orderId}/cancel`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ reason: reason.trim() }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Error al cancelar');
+        throw new Error(error.message || "Error al cancelar");
       }
 
-      toast.success('Pedido cancelado exitosamente');
+      toast.success("Pedido cancelado exitosamente");
       setSelectedOrder(null);
       await fetchOrders();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Error al cancelar pedido');
+      toast.error(error instanceof Error ? error.message : "Error al cancelar pedido");
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("es-ES", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -182,12 +183,10 @@ export function ProfilePage() {
 
   if (!user) return null;
 
-  const canCancelOrder = (status: string) => {
-    return ['PENDING', 'CONFIRMED'].includes(status);
-  };
+  const canCancelOrder = (status: string) => ["PENDING", "CONFIRMED"].includes(status);
 
   return (
-    <div className=" min-h-screen bg-gray-100 py-6 sm:py-8 px-3 sm:px-6">
+    <div className="min-h-screen bg-gray-100 py-6 sm:py-8 px-3 sm:px-6">
       <div className="max-w-6xl mx-auto space-y-6">
 
         <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6">
@@ -224,16 +223,17 @@ export function ProfilePage() {
               <div>
                 <h3 className="text-base sm:text-lg font-semibold text-gray-800">Mis Pedidos</h3>
                 <p className="text-xs sm:text-sm text-gray-500">
-                  {orders.length} {orders.length === 1 ? 'pedido' : 'pedidos'}
+                  {orders.length} {orders.length === 1 ? "pedido" : "pedidos"}
                 </p>
               </div>
             </div>
+
             <button
               onClick={fetchOrders}
               disabled={loadingOrders}
               className="px-3 sm:px-4 py-2 border rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 w-full sm:w-auto"
             >
-              {loadingOrders ? 'Actualizando...' : 'Actualizar'}
+              {loadingOrders ? "Actualizando..." : "Actualizar"}
             </button>
           </div>
 
@@ -252,16 +252,24 @@ export function ProfilePage() {
             <div className="grid gap-4">
               {orders.map((order) => {
                 const statusInfo = STATUS_CONFIG[order.status] || {
-                  label: order.status, color: 'text-gray-800', bgColor: 'bg-gray-100'
+                  label: order.status,
+                  color: "text-gray-800",
+                  bgColor: "bg-gray-100",
                 };
+
                 return (
-                  <div key={order.id} className="border border-gray-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:shadow transition">
+                  <div
+                    key={order.id}
+                    className="border border-gray-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:shadow transition"
+                  >
                     <div className="flex-1">
                       <h4 className="font-semibold text-gray-800 text-sm sm:text-base">
                         Pedido #{order.id}
                       </h4>
                       <p className="text-xs text-gray-500">{formatDate(order.createdAt)}</p>
-                      <span className={`mt-1 inline-block text-xs px-2 py-1 rounded-full ${statusInfo.bgColor} ${statusInfo.color}`}>
+                      <span
+                        className={`mt-1 inline-block text-xs px-2 py-1 rounded-full ${statusInfo.bgColor} ${statusInfo.color}`}
+                      >
                         {statusInfo.label}
                       </span>
                     </div>
@@ -274,9 +282,10 @@ export function ProfilePage() {
                       >
                         <AiOutlineEye size={14} /> Ver
                       </button>
+
                       {canCancelOrder(order.status) && (
                         <button
-                          onClick={() => handleCancelOrder(order.id)}
+                          onClick={() => openCancelModal(order.id)}
                           className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-xs sm:text-sm hover:bg-red-100 transition"
                         >
                           Cancelar
@@ -291,14 +300,18 @@ export function ProfilePage() {
         </div>
       </div>
 
-      {/* Modal detalle */}
+      {/* Modal Detalle */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-3 sm:p-6">
           <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-xl">
             <div className="sticky top-0 bg-white border-b px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
               <div>
-                <h2 className="text-lg sm:text-xl font-bold text-gray-800">Pedido #{selectedOrder.id}</h2>
-                <p className="text-xs sm:text-sm text-gray-500">{formatDate(selectedOrder.createdAt)}</p>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-800">
+                  Pedido #{selectedOrder.id}
+                </h2>
+                <p className="text-xs sm:text-sm text-gray-500">
+                  {formatDate(selectedOrder.createdAt)}
+                </p>
               </div>
               <button
                 onClick={() => setSelectedOrder(null)}
@@ -312,37 +325,73 @@ export function ProfilePage() {
               {/* Estado */}
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">Estado</h3>
-                <span className={`inline-block text-xs sm:text-sm font-medium px-3 py-1 rounded-full ${STATUS_CONFIG[selectedOrder.status]?.bgColor} ${STATUS_CONFIG[selectedOrder.status]?.color}`}>
+                <span
+                  className={`inline-block text-xs sm:text-sm font-medium px-3 py-1 rounded-full ${STATUS_CONFIG[selectedOrder.status]?.bgColor} ${STATUS_CONFIG[selectedOrder.status]?.color}`}
+                >
                   {STATUS_CONFIG[selectedOrder.status]?.label || selectedOrder.status}
                 </span>
               </div>
 
-              {/* Info envío */}
+              {/* Info de envío */}
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">Envío</h3>
                 <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2 text-xs sm:text-sm">
-                  <p><span className="font-medium">Destinatario:</span> {selectedOrder.customerName}</p>
-                  <p><span className="font-medium">Email:</span> {selectedOrder.customerEmail}</p>
-                  {selectedOrder.customerPhone && <p><span className="font-medium">Teléfono:</span> {selectedOrder.customerPhone}</p>}
-                  <p><span className="font-medium">Dirección:</span> {selectedOrder.shippingAddress}</p>
-                  {selectedOrder.shippingMethod && <p><span className="font-medium">Método:</span> {selectedOrder.shippingMethod}</p>}
+                  <p>
+                    <span className="font-medium">Destinatario:</span>{" "}
+                    {selectedOrder.customerName}
+                  </p>
+                  <p>
+                    <span className="font-medium">Email:</span>{" "}
+                    {selectedOrder.customerEmail}
+                  </p>
+
+                  {selectedOrder.customerPhone && (
+                    <p>
+                      <span className="font-medium">Teléfono:</span>{" "}
+                      {selectedOrder.customerPhone}
+                    </p>
+                  )}
+
+                  <p>
+                    <span className="font-medium">Dirección:</span>{" "}
+                    {selectedOrder.shippingAddress}
+                  </p>
+
+                  {selectedOrder.shippingMethod && (
+                    <p>
+                      <span className="font-medium">Método:</span>{" "}
+                      {selectedOrder.shippingMethod}
+                    </p>
+                  )}
                 </div>
               </div>
 
               {/* Productos */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Productos ({selectedOrder.items.length})</h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                  Productos ({selectedOrder.items.length})
+                </h3>
                 <div className="space-y-3">
                   {selectedOrder.items.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3 sm:gap-4 bg-gray-50 rounded-lg p-2 sm:p-3">
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-3 sm:gap-4 bg-gray-50 rounded-lg p-2 sm:p-3"
+                    >
                       <img
-                        src={item.productImage || "https://via.placeholder.com/60x60?text=Sin+Imagen"}
+                        src={
+                          item.productImage ||
+                          "https://via.placeholder.com/60x60?text=Sin+Imagen"
+                        }
                         alt={item.productName}
                         className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded"
                       />
                       <div className="flex-1 text-xs sm:text-sm">
-                        <h4 className="font-medium text-gray-800">{item.productName}</h4>
-                        <p className="text-gray-500">{item.quantity} x ${item.unitPrice.toFixed(2)}</p>
+                        <h4 className="font-medium text-gray-800">
+                          {item.productName}
+                        </h4>
+                        <p className="text-gray-500">
+                          {item.quantity} x ${item.unitPrice.toFixed(2)}
+                        </p>
                       </div>
                       <p className="font-semibold text-gray-800 text-xs sm:text-sm">
                         ${item.subtotal.toFixed(2)}
@@ -355,17 +404,65 @@ export function ProfilePage() {
               {/* Total */}
               <div className="border-t pt-4 flex justify-between items-center text-base sm:text-lg font-bold">
                 <span>Total</span>
-                <span className="text-xl sm:text-2xl">${selectedOrder.total.toFixed(2)}</span>
+                <span className="text-xl sm:text-2xl">
+                  ${selectedOrder.total.toFixed(2)}
+                </span>
               </div>
 
+              {/* Botón cancelar */}
               {canCancelOrder(selectedOrder.status) && (
                 <button
-                  onClick={() => handleCancelOrder(selectedOrder.id)}
+                  onClick={() => openCancelModal(selectedOrder.id)}
                   className="w-full py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm sm:text-base font-medium"
                 >
                   Cancelar pedido
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CANCELAR */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+          <div className="bg-white rounded-xl p-5 w-full max-w-md shadow-lg">
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">
+              Motivo de la cancelación
+            </h2>
+
+            <textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Escribe el motivo..."
+              className="w-full h-28 p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+
+            <div className="flex justify-end gap-3 mt-4">
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancelReason("");
+                }}
+                className="px-4 py-2 text-gray-600 border rounded-lg hover:bg-gray-100 transition"
+              >
+                Cerrar
+              </button>
+
+              <button
+                onClick={() => {
+                  if (!cancelReason.trim()) {
+                    toast.error("Debes proporcionar una razón");
+                    return;
+                  }
+                  handleCancelOrder(orderToCancel!, cancelReason);
+                  setShowCancelModal(false);
+                  setCancelReason("");
+                }}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+              >
+                Confirmar
+              </button>
             </div>
           </div>
         </div>

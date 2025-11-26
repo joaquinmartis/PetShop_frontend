@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 const Cartitems = () => {
-  const { items, removeFromCart, updateQty, syncCart, createOrder } = useCartStore((state) => state);
+  const { items, removeFromCart, updateQty, syncCart, createOrder, isLoading, isDeleting } = useCartStore((state) => state);
 
   const subtotal = items.reduce(
     (total, item) => total + item.price * item.quantity,
@@ -20,8 +20,9 @@ const Cartitems = () => {
   const [showEmpty, setShowEmpty] = useState(items.length === 0);
   const [shippingAddress, setShippingAddress] = useState("");
   const [notes, setNotes] = useState("");
+  //const [isLoading, setIsLoading] = useState(false);
 
-    // Detecta si está autenticado
+  // Detecta si está autenticado
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -35,8 +36,9 @@ const Cartitems = () => {
       }
     };
     checkSession();
+    //setIsLoading(false);
   }, [navigate]);
-  
+
   // Detecta cuándo queda vacío el carrito
   useEffect(() => {
     syncCart();
@@ -55,12 +57,17 @@ const Cartitems = () => {
     const trimmedAddress = shippingAddress.trim();
     const trimmedNotes = notes.trim();
 
+    if (isLoading) return; // Prevenir múltiples submissions
+
+    //setIsLoading(true);
+
     if (!trimmedAddress) {
       toast.error("Por favor ingresa una dirección de envío.");
       return;
     }
 
     createOrder(trimmedAddress, trimmedNotes);
+
   };
 
   return (
@@ -119,7 +126,7 @@ const Cartitems = () => {
                           <button
                             onClick={() => updateQty("decrement", item.id)}
                             className="px-3 py-1 text-gray-500 hover:text-gray-700 disabled:text-gray-300"
-                            disabled={item.quantity <= 1}
+                            disabled={item.quantity <= 1 || isLoading}
                           >
                             −
                           </button>
@@ -128,6 +135,7 @@ const Cartitems = () => {
                           </span>
                           <button
                             onClick={() => updateQty("increment", item.id)}
+                            disabled={isLoading}
                             className="px-3 py-1 text-blue-500 hover:text-blue-700"
                           >
                             +
@@ -143,6 +151,7 @@ const Cartitems = () => {
                     <td className="p-3 text-center">
                       <button
                         className="text-red-500 hover:text-red-700 transition"
+                        disabled={isDeleting}
                         onClick={() => removeFromCart(item.id)}
                       >
                         <AiFillDelete size={"1.4rem"} />
@@ -159,11 +168,11 @@ const Cartitems = () => {
           )}
         </div>
 
-        {/* 💰 Resumen */}
+        {/* Resumen */}
         <div
           className={`lg:w-[35%] w-full h-fit shadow-lg rounded-xl p-6 space-y-5 sticky top-10 border transition-all duration-500 ${showEmpty
-              ? "bg-gray-100 text-gray-400 border-gray-200"
-              : "bg-white text-gray-800 border-transparent"
+            ? "bg-gray-100 text-gray-400 border-gray-200"
+            : "bg-white text-gray-800 border-transparent"
             }`}
         >
           {!showEmpty ? (
@@ -216,9 +225,37 @@ const Cartitems = () => {
 
               <button
                 className="w-full py-3 bg-gray-900 text-white rounded-full font-medium hover:bg-gray-800 transition"
+                disabled={isLoading}
                 onClick={handleCreateOrder}
               >
-                Finalizar Compra
+                {isLoading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <svg
+                      className="animate-spin h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    <span>La compra es casi tuya...</span>
+                  </div>
+                ) : (
+                  "Finalizar Compra"
+                )}
+
               </button>
             </>
           ) : (
