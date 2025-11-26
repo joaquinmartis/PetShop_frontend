@@ -55,6 +55,7 @@ const Root = () => {
   const navigate = useNavigate();
   const { isBackoffice, loadUser } = useUserStore();
 
+
   useEffect(() => {
     if (isBackoffice) {
       navigate("/backoffice");

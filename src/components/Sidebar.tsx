@@ -37,7 +37,7 @@ const SideBar: React.FC = () => {
 
   useEffect(() => {
     loadUser();
-  }, [loadUser]);
+  }, [loadUser, navigate]);
 
 
   useEffect(() => {
