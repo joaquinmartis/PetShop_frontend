@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect } from 'react'
 import { Home } from './Pages/Home'
 import { Cart } from './Pages/Cart'
 import { Order } from './Pages/Order'
@@ -10,6 +10,8 @@ import { Backoffice } from "./Pages/Backoffice.tsx";
 import { Toaster } from "react-hot-toast";
 
 
+import { useNavigate } from "react-router-dom";
+import useUserStore from "./store/userManagement";
 
 import {
   createBrowserRouter,
@@ -23,6 +25,7 @@ import SideBar from './components/Sidebar.tsx'
 
 
 function App() {
+
   const router = createBrowserRouter(
     createRoutesFromElements(
       <Route path='/' element={<Root />}>
@@ -49,15 +52,24 @@ function App() {
 export default App
 
 const Root = () => {
+  const navigate = useNavigate();
+  const { isBackoffice, loadUser } = useUserStore();
+
+
+  useEffect(() => {
+    if (isBackoffice) {
+      navigate("/backoffice");
+    }
+  }, [isBackoffice]);
   return (
     <div className="flex">
       <SideBar />
-        <div className="flex-1 pt-14 pt-0"> {/* espacio por el header */}
-          <Toaster position="top-center" reverseOrder={false} />
-          <Outlet />
+      <div className="flex-1 pt-14 pt-0"> {/* espacio por el header */}
+        <Toaster position="top-center" reverseOrder={false} />
+        <Outlet />
 
-        </div>
       </div>
+    </div>
 
   )
 }

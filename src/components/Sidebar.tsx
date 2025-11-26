@@ -4,7 +4,7 @@ import { CiShoppingCart, CiSearch } from "react-icons/ci";
 import { FiUser } from "react-icons/fi";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import useCartStore from "../store/cartStore";
-
+import useUserManagement from "../store/userManagement";
 interface Category {
   id: number;
   name: string;
@@ -32,6 +32,13 @@ const SideBar: React.FC = () => {
   const params = new URLSearchParams(location.search);
   const searchTerm = params.get("search") || "";
   const isHomePage = location.pathname === "/";
+
+  const { isBackoffice, loadUser } = useUserManagement((state) => state);
+
+  useEffect(() => {
+    loadUser();
+  }, [loadUser, navigate]);
+
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -68,11 +75,11 @@ const SideBar: React.FC = () => {
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    
+
     // Sincronizar ambos inputs
     if (searchInputMobileRef.current) searchInputMobileRef.current.value = value;
     if (searchInputDesktopRef.current) searchInputDesktopRef.current.value = value;
-    
+
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
 
     // Solo buscar automáticamente si estamos en home
@@ -99,40 +106,47 @@ const SideBar: React.FC = () => {
   };
 
   return (
+
     <>
-      {/* HEADER MOBILE */}
-      <header className="fixed top-0 left-0 right-0 h-14 bg-white shadow z-50 flex items-center justify-between px-3 gap-3 lg:hidden">
-        <button className="p-2 rounded bg-gray-100" onClick={() => setOpen(true)}>
-          <HiOutlineMenuAlt2 size={22} />
-        </button>
 
-        {/* LOGO + BUSCADOR */}
-        <div className="flex flex-1 justify-center items-center gap-3">
-          <h1
-            className="text-2xl font-bold cursor-pointer whitespace-nowrap"
-            onClick={() => navigate("/")}
-          >
-            PetShop
-          </h1>
 
-          <div className="flex items-center bg-gray-100 rounded-full px-3 py-2 w-[30%] sm:w-[50%]">
-            <input
-              ref={searchInputMobileRef}
-              type="text"
-              placeholder="Buscar..."
-              defaultValue={searchTerm}
-              className="bg-transparent outline-none flex-grow text-sm"
-              onChange={handleSearchChange}
-              onKeyDown={handleKeyDown}
-            />
-            <CiSearch
-              size={20}
-              onClick={handleSearchSubmit}
-              className="text-gray-600 cursor-pointer hover:scale-110 transition"
-            />
+
+      <>
+        {/* HEADER MOBILE */}
+        <header className="fixed top-0 left-0 right-0 h-14 bg-white shadow z-50 flex items-center justify-between px-3 gap-3 lg:hidden">
+          {!isBackoffice ? (
+            <button className="p-2 rounded bg-gray-100" onClick={() => setOpen(true)}>
+              <HiOutlineMenuAlt2 size={22} />
+            </button>) : ""}
+
+          <div className="flex flex-1 justify-center items-center gap-3">
+            <h1
+              className="text-2xl font-bold cursor-pointer whitespace-nowrap"
+              onClick={() => navigate("/")}
+            >
+              PetShop
+            </h1>
+            {!isBackoffice ? (
+              <div className="flex items-center bg-gray-100 rounded-full px-3 py-2 w-[30%] sm:w-[50%]">
+                <input
+                  ref={searchInputMobileRef}
+                  type="text"
+                  placeholder="Buscar..."
+                  defaultValue={searchTerm}
+                  className="bg-transparent outline-none flex-grow text-sm"
+                  onChange={handleSearchChange}
+                  onKeyDown={handleKeyDown}
+                />
+                <CiSearch
+                  size={20}
+                  onClick={handleSearchSubmit}
+                  className="text-gray-600 cursor-pointer hover:scale-110 transition"
+                />
+              </div>
+            ) : ""}
           </div>
-        </div>
-      </header>
+        </header>
+      </>
 
       {/* HEADER DESKTOP */}
       <header className="
@@ -145,8 +159,7 @@ const SideBar: React.FC = () => {
         >
           PetShop
         </h1>
-
-        <div className="flex items-center bg-gray-100 rounded-full px-4 py-2 w-96">
+        {!isBackoffice ? <div className="flex items-center bg-gray-100 rounded-full px-4 py-2 w-96">
           <input
             ref={searchInputDesktopRef}
             type="text"
@@ -161,25 +174,26 @@ const SideBar: React.FC = () => {
             onClick={handleSearchSubmit}
             className="text-gray-600 cursor-pointer hover:scale-110 transition"
           />
-        </div>
+        </div> : ""}
+
       </header>
 
       {/* OVERLAY */}
       <div
         onClick={closeSidebar}
-        className={`lg:hidden fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 ${
-          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
+        className={`lg:hidden fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }`}
       />
 
       {/* SIDEBAR */}
-      <aside
-  onMouseEnter={() => setSidebarHovered(true)}
-  onMouseLeave={() => {
-    setSidebarHovered(false);
-    setShowCategories(false);
-  }}
-  className={`
+      {!isBackoffice ? (
+        <aside
+          onMouseEnter={() => setSidebarHovered(true)}
+          onMouseLeave={() => {
+            setSidebarHovered(false);
+            setShowCategories(false);
+          }}
+          className={`
     fixed top-0 left-0 h-screen bg-white shadow-xl
     pt-16 lg:pt-16
     transform transition-all duration-300 ease-out
@@ -190,85 +204,85 @@ const SideBar: React.FC = () => {
     lg:translate-x-0
     ${sidebarHovered ? "lg:w-64" : "lg:w-16"}
 
-    z-50 lg:z-30   /* 📌 AQUÍ el truco */
+    z-50 lg:z-30  
   `}
->
-        <nav className="flex flex-col gap-2 px-3 py-4">
+        >
 
-          <NavLink
-            to="/"
-            onClick={closeSidebar}
-            className="flex items-center gap-3 p-2 rounded hover:bg-gray-100"
-            title="Inicio"
-          >
-            <HiOutlineHome size={20} className="flex-shrink-0" /> 
-            <span className={`whitespace-nowrap ${sidebarHovered ? "" : "lg:hidden"}`}>Inicio</span>
-          </NavLink>
+          <nav className="flex flex-col gap-2 px-3 py-4">
 
-          <button
-            onClick={() => setShowCategories(!showCategories)}
-            className="flex items-center gap-3 p-2 rounded hover:bg-gray-100"
-            title="Categorías"
-          >
-            <HiOutlineMenuAlt2 size={20} className="flex-shrink-0" />
-            <span className={`whitespace-nowrap ${sidebarHovered ? "" : "lg:hidden"}`}>Categorías</span>
-          </button>
+            <NavLink
+              to="/"
+              onClick={closeSidebar}
+              className="flex items-center gap-3 p-2 rounded hover:bg-gray-100"
+              title="Inicio"
+            >
+              <HiOutlineHome size={20} className="flex-shrink-0" />
+              <span className={`whitespace-nowrap ${sidebarHovered ? "" : "lg:hidden"}`}>Inicio</span>
+            </NavLink>
 
-          <div
-            className={`transition-all duration-300 overflow-hidden ${
-              showCategories ? "max-h-[600px]" : "max-h-0"
-            }`}
-          >
-            <div className="ml-6 mt-1 border-l border-gray-200 pl-2 py-2 flex flex-col gap-1">
-              <button
-                onClick={() => {
-                  navigate("/");
-                  setShowCategories(false);
-                  closeSidebar();
-                }}
-                className="block text-left px-2 py-1 rounded hover:bg-gray-100 text-sm"
-              >
-                Ver todo
-              </button>
+            <button
+              onClick={() => setShowCategories(!showCategories)}
+              className="flex items-center gap-3 p-2 rounded hover:bg-gray-100"
+              title="Categorías"
+            >
+              <HiOutlineMenuAlt2 size={20} className="flex-shrink-0" />
+              <span className={`whitespace-nowrap ${sidebarHovered ? "" : "lg:hidden"}`}>Categorías</span>
+            </button>
 
-              {categories.map((c) => (
+            <div
+              className={`transition-all duration-300 overflow-hidden ${showCategories ? "max-h-[600px]" : "max-h-0"
+                }`}
+            >
+              <div className="ml-6 mt-1 border-l border-gray-200 pl-2 py-2 flex flex-col gap-1">
                 <button
-                  key={c.id}
-                  onClick={() => goToCategory(c)}
-                  className="block w-full text-left px-2 py-1 rounded hover:bg-gray-100 text-sm"
+                  onClick={() => {
+                    navigate("/");
+                    setShowCategories(false);
+                    closeSidebar();
+                  }}
+                  className="block text-left px-2 py-1 rounded hover:bg-gray-100 text-sm"
                 >
-                  {c.name}
+                  Ver todo
                 </button>
-              ))}
+
+                {categories.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => goToCategory(c)}
+                    className="block w-full text-left px-2 py-1 rounded hover:bg-gray-100 text-sm"
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <button
-            onClick={() => {
-              navigate("/cart");
-              closeSidebar();
-            }}
-            className="relative flex items-center gap-3 p-2 rounded hover:bg-gray-100"
-            title="Carrito"
-          >
-            <CiShoppingCart size={22} className="flex-shrink-0" />
-            <span className={`whitespace-nowrap ${sidebarHovered ? "" : "lg:hidden"}`}>Carrito</span>
+            <button
+              onClick={() => {
+                navigate("/cart");
+                closeSidebar();
+              }}
+              className="relative flex items-center gap-3 p-2 rounded hover:bg-gray-100"
+              title="Carrito"
+            >
+              <CiShoppingCart size={22} className="flex-shrink-0" />
+              <span className={`whitespace-nowrap ${sidebarHovered ? "" : "lg:hidden"}`}>Carrito</span>
 
-          </button>
+            </button>
 
-          <button
-            onClick={() => {
-              navigate("/profile");
-              closeSidebar();
-            }}
-            className="flex items-center gap-3 p-2 rounded hover:bg-gray-100"
-            title="Perfil"
-          >
-            <FiUser size={20} className="flex-shrink-0" />
-            <span className={`whitespace-nowrap ${sidebarHovered ? "" : "lg:hidden"}`}>Perfil</span>
-          </button>
-        </nav>
-      </aside>
+            <button
+              onClick={() => {
+                navigate("/profile");
+                closeSidebar();
+              }}
+              className="flex items-center gap-3 p-2 rounded hover:bg-gray-100"
+              title="Perfil"
+            >
+              <FiUser size={20} className="flex-shrink-0" />
+              <span className={`whitespace-nowrap ${sidebarHovered ? "" : "lg:hidden"}`}>Perfil</span>
+            </button>
+          </nav>
+        </aside>) : ""}
     </>
   );
 };
