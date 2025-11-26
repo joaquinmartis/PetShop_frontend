@@ -2,15 +2,12 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { 
-  AiOutlineEye, 
+
   AiOutlineClose, 
-  AiOutlineCheckCircle, 
-  AiOutlineCloseCircle,
-  AiOutlineRocket,
-  AiOutlineInbox,
-  AiOutlineCar,
   AiOutlineFilter
 } from "react-icons/ai";
+
+import useUserManagement from "../store/userManagement";
 
 interface OrderItem {
   id: number;
@@ -73,6 +70,10 @@ export function Backoffice() {
   const [actionLoading, setActionLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
+  const { loadUser,unloadUser } = useUserManagement((state) => state);
+    useEffect(() => {
+      loadUser();
+    }, [loadUser]);
   // Verificar autorización y cargar órdenes
   useEffect(() => {
     const checkAuthAndLoadOrders = async () => {
@@ -113,6 +114,7 @@ export function Backoffice() {
         method: "POST",
         credentials: "include",
       });
+      unloadUser();
       toast.success("Sesión cerrada");
       navigate("/auth");
     } catch {

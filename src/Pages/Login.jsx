@@ -19,6 +19,8 @@ export function LoginPage() {
 
     setIsLoading(true);
 
+
+    
     try {
       const res = await fetch(`${BASE_URL}/users/login`, {
         method: "POST",
@@ -46,6 +48,9 @@ export function LoginPage() {
       toast.error(error.message);
       setIsLoading(false); // Solo reseteamos si hay error
     }
+
+
+
     // No reseteamos isLoading si hay éxito porque estamos navegando
   };
 
