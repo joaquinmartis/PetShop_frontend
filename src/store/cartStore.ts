@@ -100,7 +100,7 @@ const useCartStore = create<CartSate>()(
             title: item.productName,
             price: item.unitPrice,
             image: [item.imageUrl],
-          }));
+          }))  .sort((a, b) => a.id - b.id); 
 
           set({ items: newLocalItems, isLoaded: true });
 
