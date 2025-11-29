@@ -2,10 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { 
-
   AiOutlineClose, 
-  AiOutlineFilter
+  AiOutlineFilter,
+  AiOutlineCheckCircle,
+  AiOutlineClockCircle
 } from "react-icons/ai";
+import { MdEmail, MdSms, MdLocalShipping } from "react-icons/md";
+import { FaWhatsapp, FaTelegram } from "react-icons/fa";
 
 import useUserManagement from "../store/userManagement";
 
@@ -17,6 +20,16 @@ interface OrderItem {
   quantity: number;
   unitPrice: number;
   subtotal: number;
+}
+
+interface NotificationPreferences {
+  emailEnabled: boolean;
+  whatsappEnabled: boolean;
+  whatsappNumber: string | null;
+  smsEnabled: boolean;
+  smsNumber: string | null;
+  telegramEnabled: boolean;
+  telegramChatId: string | null;
 }
 
 interface Order {
@@ -37,6 +50,7 @@ interface Order {
   items: OrderItem[];
   createdAt: string;
   updatedAt: string;
+  notificationPreferences?: NotificationPreferences;
 }
 
 const STATUS_CONFIG: Record<string, { 
@@ -58,9 +72,9 @@ const SHIPPING_METHODS = {
   COURIER: "Courier"
 };
 
+const SHIPPING_COST = 10000; // Costo fijo de envío
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
-
 
 export function Backoffice() {
   const navigate = useNavigate();
@@ -70,10 +84,12 @@ export function Backoffice() {
   const [actionLoading, setActionLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
-  const { loadUser,unloadUser } = useUserManagement((state) => state);
-    useEffect(() => {
-      loadUser();
-    }, [loadUser]);
+  const { loadUser, unloadUser } = useUserManagement((state) => state);
+  
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
+
   // Verificar autorización y cargar órdenes
   useEffect(() => {
     const checkAuthAndLoadOrders = async () => {
@@ -107,7 +123,7 @@ export function Backoffice() {
 
     checkAuthAndLoadOrders();
   }, [navigate]);
-    // ✅ Nueva función: cerrar sesión
+
   const handleLogout = async () => {
     try {
       await fetch(`${BASE_URL}/users/logout`, {
@@ -159,7 +175,6 @@ export function Backoffice() {
       toast.success("Orden marcada como lista para enviar");
       await fetchOrders();
       
-      // Actualizar orden seleccionada
       const updatedOrder = await response.json();
       setSelectedOrder(updatedOrder);
     } catch (error) {
@@ -292,6 +307,20 @@ export function Backoffice() {
     });
   };
 
+  // Mock: Simula que las notificaciones ya fueron enviadas
+  const getNotificationStatus = (channel: string) => {
+    // En el futuro esto vendrá de la API
+    return Math.random() > 0.3; // 70% enviadas
+  };
+
+  const generateWhatsAppLink = (phoneNumber: string, orderId: number) => {
+    const message = encodeURIComponent(
+      `Hola! Te escribo sobre tu pedido #${orderId}. ¿En qué puedo ayudarte?`
+    );
+    const cleanNumber = phoneNumber.replace(/[^\d]/g, '');
+    return `https://web.whatsapp.com/send?phone=${cleanNumber}&text=${message}`;
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-100">
@@ -303,10 +332,10 @@ export function Backoffice() {
     );
   }
 
-   return (
+  return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        {/* ✅ Header con botón de cerrar sesión */}
+        {/* Header con botón de cerrar sesión */}
         <div className="bg-white rounded-xl shadow-md p-6 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Backoffice - Gestión de Órdenes</h1>
@@ -340,12 +369,10 @@ export function Backoffice() {
               Actualizar
             </button>
 
-            {/* ✅ Botón cerrar sesión */}
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
             >
-      
               <span>Cerrar sesión</span>
             </button>
           </div>
@@ -456,6 +483,22 @@ export function Backoffice() {
                 </div>
               </div>
 
+              {/* Costo de Envío */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <MdLocalShipping className="text-blue-500" />
+                  Costo de Envío
+                </h3>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-2xl font-bold text-blue-700">
+                    ${SHIPPING_COST.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Costo fijo aplicado a todas las órdenes
+                  </p>
+                </div>
+              </div>
+
               {/* Método de envío */}
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">Método de envío</h3>
@@ -491,6 +534,159 @@ export function Backoffice() {
                       : "No asignado"}
                   </p>
                 )}
+              </div>
+
+              {/* Preferencias de Notificaciones */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                  Preferencias de Notificaciones
+                </h3>
+                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  {selectedOrder.notificationPreferences ? (
+                    <>
+                      {/* Email */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <MdEmail className={`text-lg ${selectedOrder.notificationPreferences.emailEnabled ? 'text-red-500' : 'text-gray-400'}`} />
+                          <span className="text-sm">Email</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {selectedOrder.notificationPreferences.emailEnabled ? (
+                            <>
+                              {getNotificationStatus('email') ? (
+                                <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                                  <AiOutlineCheckCircle />
+                                  Enviada
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1 text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">
+                                  <AiOutlineClockCircle />
+                                  Pendiente
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-xs text-gray-500">Desactivado</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* WhatsApp */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <FaWhatsapp className={`text-lg ${selectedOrder.notificationPreferences.whatsappEnabled ? 'text-green-500' : 'text-gray-400'}`} />
+                          <span className="text-sm">WhatsApp</span>
+                          {selectedOrder.notificationPreferences.whatsappNumber && (
+                            <span className="text-xs text-gray-500">
+                              ({selectedOrder.notificationPreferences.whatsappNumber})
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {selectedOrder.notificationPreferences.whatsappEnabled ? (
+                            <>
+                              {getNotificationStatus('whatsapp') ? (
+                                <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                                  <AiOutlineCheckCircle />
+                                  Enviada
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1 text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">
+                                  <AiOutlineClockCircle />
+                                  Pendiente
+                                </span>
+                              )}
+                              {selectedOrder.notificationPreferences.whatsappNumber && (
+                                <a
+                                  href={generateWhatsAppLink(
+                                    selectedOrder.notificationPreferences.whatsappNumber,
+                                    selectedOrder.id
+                                  )}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs bg-green-500 text-white px-3 py-1 rounded-full hover:bg-green-600 transition flex items-center gap-1"
+                                >
+                                  <FaWhatsapp />
+                                  Contactar
+                                </a>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-xs text-gray-500">Desactivado</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* SMS */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <MdSms className={`text-lg ${selectedOrder.notificationPreferences.smsEnabled ? 'text-purple-500' : 'text-gray-400'}`} />
+                          <span className="text-sm">SMS</span>
+                          {selectedOrder.notificationPreferences.smsNumber && (
+                            <span className="text-xs text-gray-500">
+                              ({selectedOrder.notificationPreferences.smsNumber})
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {selectedOrder.notificationPreferences.smsEnabled ? (
+                            <>
+                              {getNotificationStatus('sms') ? (
+                                <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                                  <AiOutlineCheckCircle />
+                                  Enviada
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1 text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">
+                                  <AiOutlineClockCircle />
+                                  Pendiente
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-xs text-gray-500">Desactivado</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Telegram */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <FaTelegram className={`text-lg ${selectedOrder.notificationPreferences.telegramEnabled ? 'text-blue-400' : 'text-gray-400'}`} />
+                          <span className="text-sm">Telegram</span>
+                          {selectedOrder.notificationPreferences.telegramChatId && (
+                            <span className="text-xs text-gray-500">
+                              (ID: {selectedOrder.notificationPreferences.telegramChatId})
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {selectedOrder.notificationPreferences.telegramEnabled ? (
+                            <>
+                              {getNotificationStatus('telegram') ? (
+                                <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                                  <AiOutlineCheckCircle />
+                                  Enviada
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1 text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">
+                                  <AiOutlineClockCircle />
+                                  Pendiente
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-xs text-gray-500">Desactivado</span>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      No hay preferencias de notificación configuradas
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Alerta si no tiene método de envío */}
