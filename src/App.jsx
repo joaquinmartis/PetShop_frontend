@@ -1,63 +1,62 @@
-import { useState } from 'react'
-import { Home } from './Pages/Home'
-import { Cart } from './Pages/Cart'
-import { Order } from './Pages/Order'
-import { LoginPage } from './Pages/Login'
+import { useState } from "react";
+import { Home } from "./Pages/Home";
+import { Cart } from "./Pages/Cart";
+import { Order } from "./Pages/Order";
+import { LoginPage } from "./Pages/Login";
 import { AuthPromptPage } from "./Pages/AuthPage";
 import { RegisterPage } from "./Pages/RegisterPage";
 import { ProfilePage } from "./Pages/ProfilePage.tsx";
 import { Backoffice } from "./Pages/Backoffice.tsx";
+import { NotificationPreferences } from "./Pages/NotificationPreferences.tsx";
 import { Toaster } from "react-hot-toast";
-
-
 
 import {
   createBrowserRouter,
   RouterProvider,
   createRoutesFromElements,
   Route,
-  Outlet
-} from 'react-router-dom'
+  Outlet,
+} from "react-router-dom";
 
-import SideBar from './components/Sidebar.tsx'
-
+import SideBar from "./components/Sidebar.tsx";
 
 function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
-      <Route path='/' element={<Root />}>
+      <Route path="/" element={<Root />}>
         <Route index element={<Home />} />
-        <Route path='cart' element={<Cart />} />
-        <Route path='orders' element={<Order />} />
-        <Route path='login' element={<LoginPage />} />
+        <Route path="cart" element={<Cart />} />
+        <Route path="orders" element={<Order />} />
+        <Route path="login" element={<LoginPage />} />
         <Route path="/auth" element={<AuthPromptPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/backoffice" element={<Backoffice />} />
+        <Route path="/notifications" element={<NotificationPreferences />} />
       </Route>
     )
-  )
+  );
 
   return (
     <div className="App">
       <RouterProvider router={router} />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
 
 const Root = () => {
   return (
     <div className="flex">
       <SideBar />
-        <div className="flex-1 pt-14 pt-0"> {/* espacio por el header */}
-          <Toaster position="top-center" reverseOrder={false} />
-          <Outlet />
-
-        </div>
+      <div className="flex-1 pt-14 pt-0">
+        {" "}
+        {/* espacio por el header */}
+        <Toaster position="top-center" reverseOrder={false} />
+        <Outlet />
       </div>
-
-  )
-}
+    </div>
+  );
+};

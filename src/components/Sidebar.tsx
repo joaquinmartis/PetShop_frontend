@@ -1,7 +1,14 @@
-import React, { useEffect, useRef, useState, ChangeEvent, KeyboardEvent } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  ChangeEvent,
+  KeyboardEvent,
+} from "react";
 import { HiOutlineMenuAlt2, HiOutlineHome } from "react-icons/hi";
 import { CiShoppingCart, CiSearch } from "react-icons/ci";
 import { FiUser } from "react-icons/fi";
+import { IoMdNotificationsOutline } from "react-icons/io";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import useCartStore from "../store/cartStore";
 
@@ -54,7 +61,8 @@ const SideBar: React.FC = () => {
   useEffect(() => {
     if (!searchTerm) {
       if (searchInputMobileRef.current) searchInputMobileRef.current.value = "";
-      if (searchInputDesktopRef.current) searchInputDesktopRef.current.value = "";
+      if (searchInputDesktopRef.current)
+        searchInputDesktopRef.current.value = "";
     }
   }, [searchTerm]);
 
@@ -68,11 +76,13 @@ const SideBar: React.FC = () => {
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    
+
     // Sincronizar ambos inputs
-    if (searchInputMobileRef.current) searchInputMobileRef.current.value = value;
-    if (searchInputDesktopRef.current) searchInputDesktopRef.current.value = value;
-    
+    if (searchInputMobileRef.current)
+      searchInputMobileRef.current.value = value;
+    if (searchInputDesktopRef.current)
+      searchInputDesktopRef.current.value = value;
+
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
 
     // Solo buscar automáticamente si estamos en home
@@ -86,7 +96,10 @@ const SideBar: React.FC = () => {
   };
 
   const handleSearchSubmit = () => {
-    const value = searchInputMobileRef.current?.value || searchInputDesktopRef.current?.value || "";
+    const value =
+      searchInputMobileRef.current?.value ||
+      searchInputDesktopRef.current?.value ||
+      "";
     const newParams = new URLSearchParams();
     if (value.trim()) newParams.set("search", value.trim());
     navigate(`/?${newParams.toString()}`);
@@ -102,7 +115,10 @@ const SideBar: React.FC = () => {
     <>
       {/* HEADER MOBILE */}
       <header className="fixed top-0 left-0 right-0 h-14 bg-white shadow z-50 flex items-center justify-between px-3 gap-3 lg:hidden">
-        <button className="p-2 rounded bg-gray-100" onClick={() => setOpen(true)}>
+        <button
+          className="p-2 rounded bg-gray-100"
+          onClick={() => setOpen(true)}
+        >
           <HiOutlineMenuAlt2 size={22} />
         </button>
 
@@ -135,10 +151,12 @@ const SideBar: React.FC = () => {
       </header>
 
       {/* HEADER DESKTOP */}
-      <header className="
+      <header
+        className="
   hidden lg:flex fixed top-0 left-0 right-0
   h-16 bg-white shadow z-40 items-center justify-between px-6 gap-6
-">
+"
+      >
         <h1
           className="text-3xl font-bold cursor-pointer whitespace-nowrap"
           onClick={() => navigate("/")}
@@ -168,18 +186,20 @@ const SideBar: React.FC = () => {
       <div
         onClick={closeSidebar}
         className={`lg:hidden fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 ${
-          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          open
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
         }`}
       />
 
       {/* SIDEBAR */}
       <aside
-  onMouseEnter={() => setSidebarHovered(true)}
-  onMouseLeave={() => {
-    setSidebarHovered(false);
-    setShowCategories(false);
-  }}
-  className={`
+        onMouseEnter={() => setSidebarHovered(true)}
+        onMouseLeave={() => {
+          setSidebarHovered(false);
+          setShowCategories(false);
+        }}
+        className={`
     fixed top-0 left-0 h-screen bg-white shadow-xl
     pt-16 lg:pt-16
     transform transition-all duration-300 ease-out
@@ -192,17 +212,22 @@ const SideBar: React.FC = () => {
 
     z-50 lg:z-30   /* 📌 AQUÍ el truco */
   `}
->
+      >
         <nav className="flex flex-col gap-2 px-3 py-4">
-
           <NavLink
             to="/"
             onClick={closeSidebar}
             className="flex items-center gap-3 p-2 rounded hover:bg-gray-100"
             title="Inicio"
           >
-            <HiOutlineHome size={20} className="flex-shrink-0" /> 
-            <span className={`whitespace-nowrap ${sidebarHovered ? "" : "lg:hidden"}`}>Inicio</span>
+            <HiOutlineHome size={20} className="flex-shrink-0" />
+            <span
+              className={`whitespace-nowrap ${
+                sidebarHovered ? "" : "lg:hidden"
+              }`}
+            >
+              Inicio
+            </span>
           </NavLink>
 
           <button
@@ -211,7 +236,13 @@ const SideBar: React.FC = () => {
             title="Categorías"
           >
             <HiOutlineMenuAlt2 size={20} className="flex-shrink-0" />
-            <span className={`whitespace-nowrap ${sidebarHovered ? "" : "lg:hidden"}`}>Categorías</span>
+            <span
+              className={`whitespace-nowrap ${
+                sidebarHovered ? "" : "lg:hidden"
+              }`}
+            >
+              Categorías
+            </span>
           </button>
 
           <div
@@ -252,8 +283,13 @@ const SideBar: React.FC = () => {
             title="Carrito"
           >
             <CiShoppingCart size={22} className="flex-shrink-0" />
-            <span className={`whitespace-nowrap ${sidebarHovered ? "" : "lg:hidden"}`}>Carrito</span>
-
+            <span
+              className={`whitespace-nowrap ${
+                sidebarHovered ? "" : "lg:hidden"
+              }`}
+            >
+              Carrito
+            </span>
           </button>
 
           <button
@@ -265,7 +301,31 @@ const SideBar: React.FC = () => {
             title="Perfil"
           >
             <FiUser size={20} className="flex-shrink-0" />
-            <span className={`whitespace-nowrap ${sidebarHovered ? "" : "lg:hidden"}`}>Perfil</span>
+            <span
+              className={`whitespace-nowrap ${
+                sidebarHovered ? "" : "lg:hidden"
+              }`}
+            >
+              Perfil
+            </span>
+          </button>
+
+          <button
+            onClick={() => {
+              navigate("/notifications");
+              closeSidebar();
+            }}
+            className="flex items-center gap-3 p-2 rounded hover:bg-gray-100"
+            title="Notificaciones"
+          >
+            <IoMdNotificationsOutline size={20} className="flex-shrink-0" />
+            <span
+              className={`whitespace-nowrap ${
+                sidebarHovered ? "" : "lg:hidden"
+              }`}
+            >
+              Notificaciones
+            </span>
           </button>
         </nav>
       </aside>
