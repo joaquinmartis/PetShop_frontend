@@ -51,6 +51,7 @@ export function ProfileInfoPage() {
 
   // Estados para notificaciones
   const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences | null>(null);
+  const [prefsExist, setPrefsExist] = useState(false);
   const [emailEnabled, setEmailEnabled] = useState(false);
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState("");
@@ -103,6 +104,7 @@ export function ProfileInfoPage() {
       if (res.ok) {
         const data = await res.json();
         if (data.exists) {
+          setPrefsExist(true);
           setNotifPrefs(data.preferences);
           setEmailEnabled(data.preferences.emailEnabled);
           setWhatsappEnabled(data.preferences.whatsappEnabled);
@@ -111,6 +113,8 @@ export function ProfileInfoPage() {
           setSmsNumber(data.preferences.smsNumber || "");
           setTelegramEnabled(data.preferences.telegramEnabled);
           setTelegramChatId(data.preferences.telegramChatId || "");
+        } else {
+          setPrefsExist(false);
         }
       }
     } catch (error) {
@@ -119,12 +123,10 @@ export function ProfileInfoPage() {
   };
 
   const validatePhone = (phoneNumber: string): boolean => {
-    // Simplemente verificar que no esté vacío si se proporciona
     return phoneNumber.trim().length === 0 || phoneNumber.trim().length >= 6;
   };
 
   const handleSavePersonalInfo = async () => {
-    // Validar teléfono si tiene valor
     if (phone && !validatePhone(phone)) {
       toast.error("El teléfono debe tener al menos 6 dígitos");
       return;
@@ -133,14 +135,14 @@ export function ProfileInfoPage() {
     setSaving(true);
     try {
       const res = await fetch(`${BASE_URL}/users/profile`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
           firstName,
           lastName,
-          address,
           phone,
+          address
         }),
       });
 
@@ -176,22 +178,51 @@ export function ProfileInfoPage() {
     const newValue = !currentValue;
     setter(newValue);
 
-    try {
-      const res = await fetch(`${BASE_URL}/notifications/preferences`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ [field]: newValue }),
-      });
+    // Autocompletar número si está activando WhatsApp o SMS
+    if (newValue && user && user.phone) {
+      if (field === "whatsappEnabled" && !whatsappNumber) {
+        setWhatsappNumber(user.phone);
+      } else if (field === "smsEnabled" && !smsNumber) {
+        setSmsNumber(user.phone);
+      }
+    }
 
-      if (!res.ok) throw new Error("Error al actualizar preferencia");
+    try {
+      let res;
+      
+      // Si no existen preferencias, crear con POST
+      if (!prefsExist) {
+        res = await fetch(`${BASE_URL}/notifications/preferences`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ [field]: newValue }),
+        });
+        
+        if (res.ok) {
+          setPrefsExist(true);
+        }
+      } else {
+        // Si ya existen, actualizar con PUT
+        res = await fetch(`${BASE_URL}/notifications/preferences`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ [field]: newValue }),
+        });
+      }
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Error al actualizar preferencia");
+      }
 
       const data = await res.json();
       setNotifPrefs(data);
       toast.success("Preferencia actualizada");
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Error al actualizar notificación");
+      toast.error(error instanceof Error ? error.message : "Error al actualizar notificación");
       // Revertir cambio
       setter(currentValue);
     }
@@ -210,6 +241,25 @@ export function ProfileInfoPage() {
     }
 
     try {
+      // Si no existen preferencias, primero crearlas
+      if (!prefsExist) {
+        const createRes = await fetch(`${BASE_URL}/notifications/preferences`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ [field]: value }),
+        });
+
+        if (createRes.ok) {
+          setPrefsExist(true);
+          const data = await createRes.json();
+          setNotifPrefs(data);
+          toast.success("Preferencias creadas y actualizado correctamente");
+          return;
+        }
+      }
+
+      // Si ya existen, actualizar
       const res = await fetch(`${BASE_URL}/notifications/preferences`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -432,6 +482,14 @@ export function ProfileInfoPage() {
             </div>
           </div>
 
+          {!prefsExist && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                ℹ️ Aún no has configurado tus preferencias de notificación. Activa cualquier canal para comenzar.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-4">
             {/* Email Notifications */}
             <div className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
@@ -495,12 +553,13 @@ export function ProfileInfoPage() {
                 <div className="mt-3 pl-11">
                   <input
                     type="tel"
-                    value={whatsappNumber}
+                    value={"+549" + whatsappNumber}
                     onChange={(e) => setWhatsappNumber(e.target.value)}
                     onBlur={(e) => handleUpdateNotificationField("whatsappNumber", e.target.value)}
                     placeholder="351 123 4567"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                   />
+                  
                   <p className="text-xs text-gray-500 mt-1">
                     Ingresa tu número de WhatsApp
                   </p>
@@ -540,7 +599,7 @@ export function ProfileInfoPage() {
                 <div className="mt-3 pl-11">
                   <input
                     type="tel"
-                    value={smsNumber}
+                    value={"+549" + smsNumber}
                     onChange={(e) => setSmsNumber(e.target.value)}
                     onBlur={(e) => handleUpdateNotificationField("smsNumber", e.target.value)}
                     placeholder="+54 351 123 4567"
@@ -592,7 +651,7 @@ export function ProfileInfoPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Obtén tu Chat ID hablando con @userinfobot en Telegram
+                    Obtén tu Chat ID hablando con @userinfobot e inicia una conversacion con @virtualpet88_bot en Telegram
                   </p>
                 </div>
               )}
