@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { CiLogout } from "react-icons/ci";
 import { HiOutlineClipboardList } from "react-icons/hi";
 import { AiOutlineEye, AiOutlineClose } from "react-icons/ai";
+import { FiUser } from "react-icons/fi"; // ⬅️ Icono agregado
 
 interface User {
   id: number;
@@ -189,6 +190,7 @@ export function ProfilePage() {
     <div className="min-h-screen bg-gray-100 py-6 sm:py-8 px-3 sm:px-6">
       <div className="max-w-6xl mx-auto space-y-6">
 
+        {/* Sección de perfil con botones actualizados */}
         <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center space-x-4">
@@ -203,13 +205,23 @@ export function ProfilePage() {
               </div>
             </div>
 
-            <button
-              onClick={handleLogout}
-              className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition"
-            >
-              <CiLogout size="1.1rem" />
-              <span>Cerrar sesión</span>
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3"> {/* ⬅️ Contenedor para botones */}
+              <NavLink
+                to="/profile-data" // ⬅️ Redirección a /profile-data
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 border border-indigo-500 text-indigo-600 rounded-lg text-sm hover:bg-indigo-50 transition"
+              >
+                <FiUser size="1.1rem" />
+                <span>Información de perfil</span> {/* ⬅️ Nuevo Botón */}
+              </NavLink>
+
+              <button
+                onClick={handleLogout}
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition"
+              >
+                <CiLogout size="1.1rem" />
+                <span>Cerrar sesión</span>
+              </button>
+            </div> {/* ⬅️ Fin del contenedor de botones */}
           </div>
         </div>
 

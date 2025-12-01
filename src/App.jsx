@@ -8,7 +8,7 @@ import { RegisterPage } from "./Pages/RegisterPage";
 import { ProfilePage } from "./Pages/ProfilePage.tsx";
 import { Backoffice } from "./Pages/Backoffice.tsx";
 import { Toaster } from "react-hot-toast";
-
+import { ProfileInfoPage } from "./Pages/ProfileInfoPage.tsx";
 
 import { useNavigate } from "react-router-dom";
 import useUserStore from "./store/userManagement";
@@ -38,6 +38,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/backoffice" element={<Backoffice />} />
+        <Route path="/profile-data" element={<ProfileInfoPage />} />
       </Route>
     )
   )

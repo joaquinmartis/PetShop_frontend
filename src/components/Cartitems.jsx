@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { AiFillDelete } from "react-icons/ai";
 import useCartStore from "../store/cartStore";
+import useUserStore from "../store/userManagement";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -8,6 +9,7 @@ const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 const Cartitems = () => {
   const { items, removeFromCart, updateQty, syncCart, createOrder, isLoading, isDeleting } = useCartStore((state) => state);
+  const { user, loadUser, isLoggedIn } = useUserStore((state) => state);
 
   const subtotal = items.reduce(
     (total, item) => total + item.price * item.quantity,
@@ -20,9 +22,9 @@ const Cartitems = () => {
   const [showEmpty, setShowEmpty] = useState(items.length === 0);
   const [shippingAddress, setShippingAddress] = useState("");
   const [notes, setNotes] = useState("");
-  //const [isLoading, setIsLoading] = useState(false);
+  const [addressLoaded, setAddressLoaded] = useState(false);
 
-  // Detecta si está autenticado
+  // Detecta si está autenticado y carga el usuario
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -30,14 +32,27 @@ const Cartitems = () => {
           method: "GET",
           credentials: "include",
         });
-        if (!response.ok) navigate("/auth");
+        if (!response.ok) {
+          navigate("/auth");
+        } else {
+          // Cargar datos del usuario en el store
+          await loadUser();
+        }
       } catch {
         navigate("/auth");
       }
     };
     checkSession();
-    //setIsLoading(false);
-  }, [navigate]);
+  }, [navigate, loadUser]);
+
+  // Autocompletar dirección cuando se carga el usuario
+  useEffect(() => {
+    if (isLoggedIn && user && user.address && !addressLoaded) {
+      setShippingAddress(user.address);
+      setAddressLoaded(true);
+      
+    }
+  }, [isLoggedIn, user, addressLoaded]);
 
   // Detecta cuándo queda vacío el carrito
   useEffect(() => {
@@ -50,8 +65,6 @@ const Cartitems = () => {
     }
   }, [items.length, syncCart]);
 
-
-
   // Maneja la creación del pedido con los campos nuevos
   const handleCreateOrder = () => {
     const trimmedAddress = shippingAddress.trim();
@@ -59,15 +72,20 @@ const Cartitems = () => {
 
     if (isLoading) return; // Prevenir múltiples submissions
 
-    //setIsLoading(true);
-
     if (!trimmedAddress) {
       toast.error("Por favor ingresa una dirección de envío.");
       return;
     }
 
     createOrder(trimmedAddress, trimmedNotes);
+  };
 
+  // Función para restaurar la dirección del perfil
+  const handleRestoreAddress = () => {
+    if (user && user.address) {
+      setShippingAddress(user.address);
+      toast.success("Dirección restaurada", { icon: "🔄" });
+    }
   };
 
   return (
@@ -170,10 +188,11 @@ const Cartitems = () => {
 
         {/* Resumen */}
         <div
-          className={`lg:w-[35%] w-full h-fit shadow-lg rounded-xl p-6 space-y-5 sticky top-10 border transition-all duration-500 ${showEmpty
-            ? "bg-gray-100 text-gray-400 border-gray-200"
-            : "bg-white text-gray-800 border-transparent"
-            }`}
+          className={`lg:w-[35%] w-full h-fit shadow-lg rounded-xl p-6 space-y-5 sticky top-10 border transition-all duration-500 ${
+            showEmpty
+              ? "bg-gray-100 text-gray-400 border-gray-200"
+              : "bg-white text-gray-800 border-transparent"
+          }`}
         >
           {!showEmpty ? (
             <>
@@ -183,9 +202,19 @@ const Cartitems = () => {
 
               {/* Dirección de envío */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Dirección de envío
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Dirección de envío
+                  </label>
+                  {user && user.address && shippingAddress !== user.address && (
+                    <button
+                      onClick={handleRestoreAddress}
+                      className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                    >
+                      🔄 Usar dirección del perfil
+                    </button>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={shippingAddress}
@@ -193,6 +222,11 @@ const Cartitems = () => {
                   className="w-full border border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-200 focus:border-blue-400 outline-none"
                   placeholder="Ej: Av. Siempre Viva 742"
                 />
+                {shippingAddress && shippingAddress === user?.address && (
+                  <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                    ✓ Usando dirección de tu perfil
+                  </p>
+                )}
               </div>
 
               {/* Notas */}
@@ -224,7 +258,7 @@ const Cartitems = () => {
               </div>
 
               <button
-                className="w-full py-3 bg-gray-900 text-white rounded-full font-medium hover:bg-gray-800 transition"
+                className="w-full py-3 bg-gray-900 text-white rounded-full font-medium hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isLoading}
                 onClick={handleCreateOrder}
               >
@@ -255,7 +289,6 @@ const Cartitems = () => {
                 ) : (
                   "Finalizar Compra"
                 )}
-
               </button>
             </>
           ) : (
