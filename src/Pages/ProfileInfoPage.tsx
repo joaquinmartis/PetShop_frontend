@@ -128,26 +128,7 @@ export function ProfileInfoPage() {
     }
   };
 
-  // Autocompletar números cuando se cargan las preferencias y el usuario
-  useEffect(() => {
-    if (user && notifPrefs) {
-      // Si WhatsApp está activado pero no tiene número, autocompletar
-      if (notifPrefs.whatsappEnabled && !whatsappNumber && user.phone) {
-        const formattedPhone = user.phone.startsWith('+549') 
-          ? user.phone 
-          : `+549${user.phone.replace(/^\+?54/, '')}`;
-        setWhatsappNumber(formattedPhone);
-      }
-      
-      // Si SMS está activado pero no tiene número, autocompletar
-      if (notifPrefs.smsEnabled && !smsNumber && user.phone) {
-        const formattedPhone = user.phone.startsWith('+549') 
-          ? user.phone 
-          : `+549${user.phone.replace(/^\+?54/, '')}`;
-        setSmsNumber(formattedPhone);
-      }
-    }
-  }, [user, notifPrefs, whatsappNumber, smsNumber]);
+
 
   const validatePhone = (phoneNumber: string): boolean => {
     return phoneNumber.trim().length === 0 || phoneNumber.trim().length >= 6;
@@ -209,15 +190,11 @@ export function ProfileInfoPage() {
     if (newValue && user && user.phone) {
       if (field === "whatsappEnabled" && !whatsappNumber) {
         // Agregar +549 si no lo tiene
-        const formattedPhone = user.phone.startsWith('+549') 
-          ? user.phone 
-          : `+549${user.phone.replace(/^\+?54/, '')}`;
+        const formattedPhone = user.phone
         setWhatsappNumber(formattedPhone);
       } else if (field === "smsEnabled" && !smsNumber) {
         // Agregar +549 si no lo tiene
-        const formattedPhone = user.phone.startsWith('+549') 
-          ? user.phone 
-          : `+549${user.phone.replace(/^\+?54/, '')}`;
+        const formattedPhone = user.phone
         setSmsNumber(formattedPhone);
       }
     }
