@@ -867,9 +867,9 @@ export function Backoffice() {
                   <button
                     onClick={() => handleRejectOrder(selectedOrder.id)}
                     disabled={actionLoading}
-                    className="w-full py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition disabled:bg-gray-400 font-medium"
+                    className="w-full py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition disabled:bg-red-400 font-medium"
                   >
-                    Rechazar/Cancelar (Aplica solo a PENDING/CONFIRMED)
+                    Rechazar/Cancelar 
                   </button>
                 )}
               </div>

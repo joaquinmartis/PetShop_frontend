@@ -108,9 +108,15 @@ export function ProfileInfoPage() {
           setNotifPrefs(data.preferences);
           setEmailEnabled(data.preferences.emailEnabled);
           setWhatsappEnabled(data.preferences.whatsappEnabled);
-          setWhatsappNumber(data.preferences.whatsappNumber || "");
+          // Cargar número de WhatsApp o usar el del perfil con +549
+          if (data.preferences.whatsappNumber) {
+            setWhatsappNumber(data.preferences.whatsappNumber);
+          }
           setSmsEnabled(data.preferences.smsEnabled);
-          setSmsNumber(data.preferences.smsNumber || "");
+          // Cargar número de SMS o usar el del perfil con +549
+          if (data.preferences.smsNumber) {
+            setSmsNumber(data.preferences.smsNumber);
+          }
           setTelegramEnabled(data.preferences.telegramEnabled);
           setTelegramChatId(data.preferences.telegramChatId || "");
         } else {
@@ -121,6 +127,27 @@ export function ProfileInfoPage() {
       console.error("Error al cargar preferencias:", error);
     }
   };
+
+  // Autocompletar números cuando se cargan las preferencias y el usuario
+  useEffect(() => {
+    if (user && notifPrefs) {
+      // Si WhatsApp está activado pero no tiene número, autocompletar
+      if (notifPrefs.whatsappEnabled && !whatsappNumber && user.phone) {
+        const formattedPhone = user.phone.startsWith('+549') 
+          ? user.phone 
+          : `+549${user.phone.replace(/^\+?54/, '')}`;
+        setWhatsappNumber(formattedPhone);
+      }
+      
+      // Si SMS está activado pero no tiene número, autocompletar
+      if (notifPrefs.smsEnabled && !smsNumber && user.phone) {
+        const formattedPhone = user.phone.startsWith('+549') 
+          ? user.phone 
+          : `+549${user.phone.replace(/^\+?54/, '')}`;
+        setSmsNumber(formattedPhone);
+      }
+    }
+  }, [user, notifPrefs, whatsappNumber, smsNumber]);
 
   const validatePhone = (phoneNumber: string): boolean => {
     return phoneNumber.trim().length === 0 || phoneNumber.trim().length >= 6;
@@ -181,9 +208,17 @@ export function ProfileInfoPage() {
     // Autocompletar número si está activando WhatsApp o SMS
     if (newValue && user && user.phone) {
       if (field === "whatsappEnabled" && !whatsappNumber) {
-        setWhatsappNumber(user.phone);
+        // Agregar +549 si no lo tiene
+        const formattedPhone = user.phone.startsWith('+549') 
+          ? user.phone 
+          : `+549${user.phone.replace(/^\+?54/, '')}`;
+        setWhatsappNumber(formattedPhone);
       } else if (field === "smsEnabled" && !smsNumber) {
-        setSmsNumber(user.phone);
+        // Agregar +549 si no lo tiene
+        const formattedPhone = user.phone.startsWith('+549') 
+          ? user.phone 
+          : `+549${user.phone.replace(/^\+?54/, '')}`;
+        setSmsNumber(formattedPhone);
       }
     }
 
@@ -553,15 +588,14 @@ export function ProfileInfoPage() {
                 <div className="mt-3 pl-11">
                   <input
                     type="tel"
-                    value={"+549" + whatsappNumber}
+                    value={whatsappNumber}
                     onChange={(e) => setWhatsappNumber(e.target.value)}
                     onBlur={(e) => handleUpdateNotificationField("whatsappNumber", e.target.value)}
-                    placeholder="351 123 4567"
+                    placeholder="+549 351 123 4567"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                   />
-                  
                   <p className="text-xs text-gray-500 mt-1">
-                    Ingresa tu número de WhatsApp
+                    Formato: +549 + código de área + número
                   </p>
                 </div>
               )}
@@ -599,14 +633,14 @@ export function ProfileInfoPage() {
                 <div className="mt-3 pl-11">
                   <input
                     type="tel"
-                    value={"+549" + smsNumber}
+                    value={smsNumber}
                     onChange={(e) => setSmsNumber(e.target.value)}
                     onBlur={(e) => handleUpdateNotificationField("smsNumber", e.target.value)}
-                    placeholder="+54 351 123 4567"
+                    placeholder="+549 351 123 4567"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Formato: +54 + código de área + número
+                    Formato: +549 + código de área + número
                   </p>
                 </div>
               )}
@@ -651,7 +685,7 @@ export function ProfileInfoPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Obtén tu Chat ID hablando con @userinfobot e inicia una conversacion con @virtualpet88_bot en Telegram
+                    Obtén tu Chat ID hablando con @virtualpet88_bot en Telegram
                   </p>
                 </div>
               )}
