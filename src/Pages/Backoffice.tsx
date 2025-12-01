@@ -97,10 +97,21 @@ export function Backoffice() {
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+
+
   // NUEVO ESTADO: Para rastrear qué notificaciones de WhatsApp han sido clickeadas
   const [whatsappClicks, setWhatsappClicks] = useState<number[]>([]);
 
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
+
   const { loadUser, unloadUser } = useUserManagement((state) => state);
+
+  const openCancelModal = (orderId: number) => {
+    setOrderToCancel(orderId);
+    setShowCancelModal(true);
+  };
 
   useEffect(() => {
     loadUser();
@@ -139,7 +150,32 @@ export function Backoffice() {
 
     checkAuthAndLoadOrders();
   }, [navigate]);
+  const handleCancelOrder = async (orderId: number, reason: string) => {
 
+
+    setActionLoading(true);
+    try {
+      const response = await fetch(`${BASE_URL}/backoffice/orders/${orderId}/reject`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ reason: reason.trim() }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      toast.success("Orden rechazada");
+      await fetchOrders();
+      setSelectedOrder(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Error al rechazar");
+    } finally {
+      setActionLoading(false);
+    }
+  };
   const handleLogout = async () => {
     try {
       await fetch(`${BASE_URL}/users/logout`, {
@@ -578,22 +614,20 @@ export function Backoffice() {
                     <button
                       onClick={() => handleUpdateShippingMethod(selectedOrder.id, 'OWN_TEAM')}
                       disabled={actionLoading}
-                      className={`flex-1 py-2 px-4 rounded-lg border-2 transition ${
-                        selectedOrder.shippingMethod === 'OWN_TEAM'
-                          ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
-                          : 'border-gray-300 hover:border-gray-400'
-                      }`}
+                      className={`flex-1 py-2 px-4 rounded-lg border-2 transition ${selectedOrder.shippingMethod === 'OWN_TEAM'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
+                        : 'border-gray-300 hover:border-gray-400'
+                        }`}
                     >
                       Equipo Propio
                     </button>
                     <button
                       onClick={() => handleUpdateShippingMethod(selectedOrder.id, 'COURIER')}
                       disabled={actionLoading}
-                      className={`flex-1 py-2 px-4 rounded-lg border-2 transition ${
-                        selectedOrder.shippingMethod === 'COURIER'
-                          ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
-                          : 'border-gray-300 hover:border-gray-400'
-                      }`}
+                      className={`flex-1 py-2 px-4 rounded-lg border-2 transition ${selectedOrder.shippingMethod === 'COURIER'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
+                        : 'border-gray-300 hover:border-gray-400'
+                        }`}
                     >
                       Courier
                     </button>
@@ -632,11 +666,10 @@ export function Backoffice() {
                       {notifications.map((notif) => (
                         <div
                           key={notif.id}
-                          className={`flex items-start justify-between p-3 rounded-lg border-2 ${
-                            notif.status === 'SENT'
-                              ? 'bg-green-50 border-green-200'
-                              : 'bg-red-50 border-red-200'
-                          }`}
+                          className={`flex items-start justify-between p-3 rounded-lg border-2 ${notif.status === 'SENT'
+                            ? 'bg-green-50 border-green-200'
+                            : 'bg-red-50 border-red-200'
+                            }`}
                         >
                           <div className="flex items-start gap-3 flex-1">
                             <div className="mt-0.5">
@@ -651,11 +684,10 @@ export function Backoffice() {
                                       {getChannelName(notif.channel)}
                                     </span>
                                     <span
-                                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                                        notif.status === 'SENT'
-                                          ? 'bg-green-100 text-green-700'
-                                          : 'bg-red-100 text-red-700'
-                                      }`}
+                                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${notif.status === 'SENT'
+                                        ? 'bg-green-100 text-green-700'
+                                        : 'bg-red-100 text-red-700'
+                                        }`}
                                     >
                                       {notif.status === 'SENT' ? '✓ Enviada' : '✗ Falló'}
                                     </span>
@@ -683,11 +715,11 @@ export function Backoffice() {
                                     const isClicked = whatsappClicks.includes(notif.id);
                                     const statusDisplay = isClicked
                                       ? <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700">
-                                          ✓ Contacto Iniciado
-                                        </span>
+                                        ✓ Contacto Iniciado
+                                      </span>
                                       : <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-yellow-100 text-yellow-700">
-                                          ... Pendiente de Contacto
-                                        </span>;
+                                        ... Pendiente de Contacto
+                                      </span>;
 
                                     return (
                                       <>
@@ -861,15 +893,15 @@ export function Backoffice() {
                     Marcar como entregado
                   </button>
                 )}
-                
+
                 {/* Cancelar/Rechazar siempre disponible para estados abiertos */}
-                {['PENDING', 'CONFIRMED', 'READY_TO_SHIP', 'SHIPPED'].includes(selectedOrder.status) && (
+                {['PENDING', 'CONFIRMED', 'READY_TO_SHIP'].includes(selectedOrder.status) && (
                   <button
-                    onClick={() => handleRejectOrder(selectedOrder.id)}
+                    onClick={() => openCancelModal(selectedOrder.id)}
                     disabled={actionLoading}
                     className="w-full py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition disabled:bg-red-400 font-medium"
                   >
-                    Rechazar/Cancelar 
+                    Rechazar/Cancelar
                   </button>
                 )}
               </div>
@@ -877,6 +909,52 @@ export function Backoffice() {
           </div>
         </div>
       )}
+
+      {/* MODAL CANCELAR */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+          <div className="bg-white rounded-xl p-5 w-full max-w-md shadow-lg">
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">
+              Motivo de la cancelación
+            </h2>
+
+            <textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Escribe el motivo..."
+              className="w-full h-28 p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+
+            <div className="flex justify-end gap-3 mt-4">
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancelReason("");
+                }}
+                className="px-4 py-2 text-gray-600 border rounded-lg hover:bg-gray-100 transition"
+              >
+                Cerrar
+              </button>
+
+              <button
+                onClick={() => {
+                  if (!cancelReason.trim()) {
+                    toast.error("Debes proporcionar una razón");
+                    return;
+                  }
+                  handleCancelOrder(orderToCancel!, cancelReason);
+                  setShowCancelModal(false);
+                  setCancelReason("");
+                }}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
   );
 }
